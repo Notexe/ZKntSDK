@@ -1,0 +1,129 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.config }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - config: Debug
+            preset: x64-Debug-Cross
+          - config: Release
+            preset: x64-Release-Cross
+
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-cache
+      VCPKG_ROOT: ${{ github.workspace }}/External/vcpkg
+      VCPKG_FORCE_SYSTEM_BINARIES: "1"
+      VCPKG_DISABLE_METRICS: "1"
+      XWIN_SPLAT_DIR: ${{ github.workspace }}/.xwin/splat
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Cache xwin splat
+        uses: actions/cache@v4
+        with:
+          path: .xwin
+          key: xwin-${{ runner.os }}-${{ hashFiles('cmake/scripts/fetch-xwin.sh') }}
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-${{ runner.os }}-${{ matrix.config }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-overlays/**') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ matrix.config }}-
+            vcpkg-${{ runner.os }}-
+
+      - name: Prepare vcpkg cache directory
+        run: |
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+          # Symlink the nix-provided vcpkg binary into the submodule so the
+          # CMake toolchain doesn't try to bootstrap from source (mirrors the
+          # flake.nix shellHook, which `nix develop --command` skips).
+          nix develop --command bash -c 'ln -sfn "$(command -v vcpkg)" "$VCPKG_ROOT/vcpkg"'
+
+      - name: Fetch xwin (Windows SDK + MSVC CRT)
+        run: |
+          if [ ! -d ".xwin/splat/crt/include" ]; then
+            nix develop --command bash cmake/scripts/fetch-xwin.sh
+          fi
+
+      - name: Configure
+        run: nix develop --command cmake --preset ${{ matrix.preset }}
+
+      - name: Build & install
+        run: nix develop --command cmake --build _build/${{ matrix.preset }} --target install
+
+      - name: Compute package name
+        id: stage
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF#refs/tags/v}"
+          else
+            version="0.0.0-${GITHUB_SHA:0:7}"
+          fi
+          name="ZKntSdk-${version}-${{ matrix.config }}"
+          stage="_install/${{ matrix.preset }}"
+          if [ ! -d "$stage" ]; then
+            echo "Install tree not found at $stage" >&2
+            exit 1
+          fi
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+          echo "stage=${stage}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.name }}
+          path: ${{ steps.stage.outputs.stage }}
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Repackage artifacts
+        run: |
+          mkdir -p release
+          for dir in artifacts/*/; do
+            name="$(basename "$dir")"
+            (cd "$dir" && zip -r "${GITHUB_WORKSPACE}/release/${name}.zip" .)
+          done
+          ls -la release/
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.zip
+          generate_release_notes: true

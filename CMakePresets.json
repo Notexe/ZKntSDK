@@ -1,0 +1,95 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "toolchainFile": "${sourceDir}/External/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "binaryDir": "${sourceDir}/_build/${presetName}",
+      "generator": "Ninja",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/_install/${presetName}",
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/vcpkg-overlays",
+        "VCPKG_APPLOCAL_DEPS": "OFF",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
+      }
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "displayName": "Native compilation on Windows",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "cross",
+      "hidden": true,
+      "displayName": "Cross-compilation from Linux to Windows",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-cross",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/clang-cl.cmake"
+      }
+    },
+    {
+      "name": "debug",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug"
+      }
+    },
+    {
+      "name": "release",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+      }
+    },
+    {
+      "name": "x64-Debug-Windows",
+      "inherits": [
+        "windows",
+        "debug"
+      ]
+    },
+    {
+      "name": "x64-Release-Windows",
+      "inherits": [
+        "windows",
+        "release"
+      ]
+    },
+    {
+      "name": "x64-Debug-Cross",
+      "inherits": [
+        "cross",
+        "debug"
+      ]
+    },
+    {
+      "name": "x64-Release-Cross",
+      "inherits": [
+        "cross",
+        "release"
+      ]
+    }
+  ]
+}

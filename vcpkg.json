@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "zkntsdk",
+  "version": "0.1.0",
+  "dependencies": [
+    "cr",
+    "minhook",
+    "spdlog",
+    "directx-headers",
+    {
+      "name": "imgui",
+      "features": [
+        "dx12-binding",
+        "win32-binding"
+      ]
+    }
+  ]
+}
