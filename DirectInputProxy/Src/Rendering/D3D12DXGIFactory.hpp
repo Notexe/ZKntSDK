@@ -124,6 +124,33 @@ namespace knt::rendering {
         // and notifies registered callbacks via the RenderingHost.
         void WrapAndPublishSwapChain(IUnknown* p_Device, IDXGISwapChain* p_RawSwapChain, IDXGISwapChain** p_OutSwapChain);
 
+        template<typename TSwapChain, typename TCreate> HRESULT CreateSwapChainImpl(IUnknown* p_Device, TSwapChain** p_Out, TCreate&& p_Create) {
+            TSwapChain* s_Raw = nullptr;
+            const HRESULT s_Result = p_Create(&s_Raw);
+
+            if (FAILED(s_Result) || !s_Raw) {
+                *p_Out = s_Raw;
+                return s_Result;
+            }
+
+            IDXGISwapChain* s_Base = nullptr;
+            WrapAndPublishSwapChain(p_Device, s_Raw, &s_Base);
+            *p_Out = static_cast<TSwapChain*>(s_Base);
+            return s_Result;
+        }
+
+        template<typename TFactory, typename TFn> HRESULT WithFactory(TFn&& p_Fn) {
+            TFactory* s_Factory = nullptr;
+
+            if (m_Target->QueryInterface(IID_PPV_ARGS(&s_Factory)) != S_OK) {
+                return E_NOTIMPL;
+            }
+
+            const HRESULT s_Result = p_Fn(s_Factory);
+            s_Factory->Release();
+            return s_Result;
+        }
+
         IDXGIFactory4* m_Target;
         std::atomic<ULONG> m_RefCount{0};
     };

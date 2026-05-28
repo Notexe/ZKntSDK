@@ -680,10 +680,10 @@ namespace zknt::rendering {
             return {false, 0};
         }
 
-        // Toggle UI focus via tilde / backtick (the key below ESC, same as
-        // ZHMModSDK). VK_OEM_3 covers `~ on US layouts and the equivalent
-        // key on most ISO layouts.
-        if ((p_Msg == WM_KEYDOWN || p_Msg == WM_SYSKEYDOWN) && p_Wparam == VK_OEM_3) {
+        // Layout-independent tilde toggle: compare the hardware scancode
+        // (lParam bits 16-23) rather than VK_OEM_3, which moves per layout.
+        const uint8_t s_ScanCode = static_cast<uint8_t>(p_Lparam >> 16);
+        if ((p_Msg == WM_KEYDOWN || p_Msg == WM_SYSKEYDOWN) && s_ScanCode == 0x29) {
             const bool s_NewFocus = !m_ImguiHasFocus.load(std::memory_order_acquire);
             m_ImguiHasFocus.store(s_NewFocus, std::memory_order_release);
             if (s_NewFocus) {

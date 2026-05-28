@@ -38,48 +38,27 @@ namespace knt::rendering {
             AddRef();
             return S_OK;
         }
-        return E_NOINTERFACE;
+
+        // Pass through unknown IIDs (vendor / Streamline / IDXGIDebug / ...);
+        // rejecting them breaks DLSS detection (and probably other things too).
+        return m_Target->QueryInterface(p_Riid, p_OutObject);
     }
 
     HRESULT STDMETHODCALLTYPE D3D12DXGIFactory::CheckFeatureSupport(DXGI_FEATURE p_Feature, void* p_Data, UINT p_DataSize) {
-        IDXGIFactory5* s_Factory5 = nullptr;
-        if (m_Target->QueryInterface(IID_PPV_ARGS(&s_Factory5)) != S_OK) {
-            return E_NOTIMPL;
-        }
-        const HRESULT s_Result = s_Factory5->CheckFeatureSupport(p_Feature, p_Data, p_DataSize);
-        s_Factory5->Release();
-        return s_Result;
+        return WithFactory<IDXGIFactory5>([&](auto* p) { return p->CheckFeatureSupport(p_Feature, p_Data, p_DataSize); });
     }
 
     HRESULT STDMETHODCALLTYPE
     D3D12DXGIFactory::EnumAdapterByGpuPreference(UINT p_Adapter, DXGI_GPU_PREFERENCE p_GpuPreference, REFIID p_Riid, void** p_OutAdapter) {
-        IDXGIFactory6* s_Factory6 = nullptr;
-        if (m_Target->QueryInterface(IID_PPV_ARGS(&s_Factory6)) != S_OK) {
-            return E_NOTIMPL;
-        }
-        const HRESULT s_Result = s_Factory6->EnumAdapterByGpuPreference(p_Adapter, p_GpuPreference, p_Riid, p_OutAdapter);
-        s_Factory6->Release();
-        return s_Result;
+        return WithFactory<IDXGIFactory6>([&](auto* p) { return p->EnumAdapterByGpuPreference(p_Adapter, p_GpuPreference, p_Riid, p_OutAdapter); });
     }
 
     HRESULT STDMETHODCALLTYPE D3D12DXGIFactory::RegisterAdaptersChangedEvent(HANDLE p_Event, DWORD* p_OutCookie) {
-        IDXGIFactory7* s_Factory7 = nullptr;
-        if (m_Target->QueryInterface(IID_PPV_ARGS(&s_Factory7)) != S_OK) {
-            return E_NOTIMPL;
-        }
-        const HRESULT s_Result = s_Factory7->RegisterAdaptersChangedEvent(p_Event, p_OutCookie);
-        s_Factory7->Release();
-        return s_Result;
+        return WithFactory<IDXGIFactory7>([&](auto* p) { return p->RegisterAdaptersChangedEvent(p_Event, p_OutCookie); });
     }
 
     HRESULT STDMETHODCALLTYPE D3D12DXGIFactory::UnregisterAdaptersChangedEvent(DWORD p_Cookie) {
-        IDXGIFactory7* s_Factory7 = nullptr;
-        if (m_Target->QueryInterface(IID_PPV_ARGS(&s_Factory7)) != S_OK) {
-            return E_NOTIMPL;
-        }
-        const HRESULT s_Result = s_Factory7->UnregisterAdaptersChangedEvent(p_Cookie);
-        s_Factory7->Release();
-        return s_Result;
+        return WithFactory<IDXGIFactory7>([&](auto* p) { return p->UnregisterAdaptersChangedEvent(p_Cookie); });
     }
 
     void D3D12DXGIFactory::WrapAndPublishSwapChain(IUnknown* p_Device, IDXGISwapChain* p_RawSwapChain, IDXGISwapChain** p_OutSwapChain) {
@@ -101,62 +80,31 @@ namespace knt::rendering {
     }
 
     HRESULT STDMETHODCALLTYPE D3D12DXGIFactory::CreateSwapChain(IUnknown* p_Device, DXGI_SWAP_CHAIN_DESC* p_Desc, IDXGISwapChain** p_OutSwapChain) {
-        IDXGISwapChain* s_Raw = nullptr;
-        const HRESULT s_Result = m_Target->CreateSwapChain(p_Device, p_Desc, &s_Raw);
-        if (FAILED(s_Result) || !s_Raw) {
-            *p_OutSwapChain = s_Raw;
-            return s_Result;
-        }
-        WrapAndPublishSwapChain(p_Device, s_Raw, p_OutSwapChain);
-        return s_Result;
+        return CreateSwapChainImpl(p_Device, p_OutSwapChain, [&](IDXGISwapChain** raw) { return m_Target->CreateSwapChain(p_Device, p_Desc, raw); });
     }
 
     HRESULT STDMETHODCALLTYPE D3D12DXGIFactory::CreateSwapChainForHwnd(
         IUnknown* p_Device, HWND p_Hwnd, const DXGI_SWAP_CHAIN_DESC1* p_Desc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC* p_FullscreenDesc,
         IDXGIOutput* p_RestrictToOutput, IDXGISwapChain1** p_OutSwapChain
     ) {
-        IDXGISwapChain1* s_Raw = nullptr;
-        const HRESULT s_Result = m_Target->CreateSwapChainForHwnd(p_Device, p_Hwnd, p_Desc, p_FullscreenDesc, p_RestrictToOutput, &s_Raw);
-        if (FAILED(s_Result) || !s_Raw) {
-            *p_OutSwapChain = s_Raw;
-            return s_Result;
-        }
-
-        IDXGISwapChain* s_RawBase = nullptr;
-        WrapAndPublishSwapChain(p_Device, s_Raw, &s_RawBase);
-        // The wrapper also implements IDXGISwapChain1; on the fallback path
-        // WrapAndPublishSwapChain returns the raw object unchanged.
-        *p_OutSwapChain = static_cast<IDXGISwapChain1*>(s_RawBase);
-        return s_Result;
+        return CreateSwapChainImpl(p_Device, p_OutSwapChain, [&](IDXGISwapChain1** raw) {
+            return m_Target->CreateSwapChainForHwnd(p_Device, p_Hwnd, p_Desc, p_FullscreenDesc, p_RestrictToOutput, raw);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE D3D12DXGIFactory::CreateSwapChainForCoreWindow(
         IUnknown* p_Device, IUnknown* p_Window, const DXGI_SWAP_CHAIN_DESC1* p_Desc, IDXGIOutput* p_RestrictToOutput, IDXGISwapChain1** p_OutSwapChain
     ) {
-        IDXGISwapChain1* s_Raw = nullptr;
-        const HRESULT s_Result = m_Target->CreateSwapChainForCoreWindow(p_Device, p_Window, p_Desc, p_RestrictToOutput, &s_Raw);
-        if (FAILED(s_Result) || !s_Raw) {
-            *p_OutSwapChain = s_Raw;
-            return s_Result;
-        }
-        IDXGISwapChain* s_RawBase = nullptr;
-        WrapAndPublishSwapChain(p_Device, s_Raw, &s_RawBase);
-        *p_OutSwapChain = static_cast<IDXGISwapChain1*>(s_RawBase);
-        return s_Result;
+        return CreateSwapChainImpl(p_Device, p_OutSwapChain, [&](IDXGISwapChain1** raw) {
+            return m_Target->CreateSwapChainForCoreWindow(p_Device, p_Window, p_Desc, p_RestrictToOutput, raw);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE D3D12DXGIFactory::CreateSwapChainForComposition(
         IUnknown* p_Device, const DXGI_SWAP_CHAIN_DESC1* p_Desc, IDXGIOutput* p_RestrictToOutput, IDXGISwapChain1** p_OutSwapChain
     ) {
-        IDXGISwapChain1* s_Raw = nullptr;
-        const HRESULT s_Result = m_Target->CreateSwapChainForComposition(p_Device, p_Desc, p_RestrictToOutput, &s_Raw);
-        if (FAILED(s_Result) || !s_Raw) {
-            *p_OutSwapChain = s_Raw;
-            return s_Result;
-        }
-        IDXGISwapChain* s_RawBase = nullptr;
-        WrapAndPublishSwapChain(p_Device, s_Raw, &s_RawBase);
-        *p_OutSwapChain = static_cast<IDXGISwapChain1*>(s_RawBase);
-        return s_Result;
+        return CreateSwapChainImpl(p_Device, p_OutSwapChain, [&](IDXGISwapChain1** raw) {
+            return m_Target->CreateSwapChainForComposition(p_Device, p_Desc, p_RestrictToOutput, raw);
+        });
     }
 }
