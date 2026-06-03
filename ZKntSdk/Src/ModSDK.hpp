@@ -66,6 +66,9 @@ namespace zknt {
         ImFont* GetDefaultFont() const;
         ModLoader* GetModLoader() const;
         ui::ModSelector* GetUIModSelector() const;
+        [[nodiscard]] bool IsEngineInitialized() const {
+            return m_EngineInitialized;
+        }
 
         // SDK-internal UI callback registry.
         using UiCallback = std::function<void(bool p_HasFocus)>;
@@ -76,6 +79,9 @@ namespace zknt {
         void OnModLoaded(const std::string& p_Name, IPluginInterface* p_Plugin, bool p_LiveLoad) const;
         void OnModUnloading(const std::string& p_Name, IPluginInterface* p_Plugin);
         void OnModUnloaded(const std::string& p_Name) const;
+
+      private:
+        void HandleEngineInitialized(bool p_SyncHostState);
 
       private:
         // Detours
@@ -93,6 +99,7 @@ namespace zknt {
         uint32_t m_ImageSize;
 
         bool m_StartedUp = false;
+        bool m_EngineInitialized = false;
 
         knt::host::HostServices* m_HostServices = nullptr;
         std::unique_ptr<::zknt::Hooks> m_Hooks;

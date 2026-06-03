@@ -44,14 +44,19 @@ namespace knt::rendering {
 
         static void RegisterCallbacksThunk(const knt::host::RenderingCallbacks* p_Callbacks);
         static void UnregisterCallbacksThunk();
+        static bool IsEngineInitializedThunk();
+        static void SetEngineInitializedThunk(bool p_Initialized);
 
         void RegisterCallbacks(const knt::host::RenderingCallbacks* p_Callbacks);
         void UnregisterCallbacks();
+        bool IsEngineInitialized() const;
+        void SetEngineInitialized(bool p_Initialized);
 
         knt::host::HostServices m_Services{};
         std::atomic<const knt::host::RenderingCallbacks*> m_Callbacks{nullptr};
         ReloadGate m_Gate;
         std::atomic<IDXGISwapChain3*> m_ActiveSwapChain{nullptr};
         std::atomic<ID3D12CommandQueue*> m_ActiveCommandQueue{nullptr};
+        std::atomic<bool> m_EngineInitialized{false};
     };
 }

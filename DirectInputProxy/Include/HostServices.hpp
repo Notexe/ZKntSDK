@@ -28,5 +28,7 @@ namespace knt::host {
     struct HostServices {
         void (*RegisterRenderingCallbacks)(const RenderingCallbacks* p_Callbacks);
         void (*UnregisterRenderingCallbacks)();
+        bool (*IsEngineInitialized)();
+        void (*SetEngineInitialized)(bool p_Initialized);
     };
 }

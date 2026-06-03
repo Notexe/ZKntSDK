@@ -9,6 +9,8 @@ namespace knt::rendering {
     void RenderingHost::Startup() {
         m_Services.RegisterRenderingCallbacks = &RenderingHost::RegisterCallbacksThunk;
         m_Services.UnregisterRenderingCallbacks = &RenderingHost::UnregisterCallbacksThunk;
+        m_Services.IsEngineInitialized = &RenderingHost::IsEngineInitializedThunk;
+        m_Services.SetEngineInitialized = &RenderingHost::SetEngineInitializedThunk;
     }
 
     void RenderingHost::Shutdown() {
@@ -138,6 +140,14 @@ namespace knt::rendering {
         Instance().UnregisterCallbacks();
     }
 
+    bool RenderingHost::IsEngineInitializedThunk() {
+        return Instance().IsEngineInitialized();
+    }
+
+    void RenderingHost::SetEngineInitializedThunk(bool p_Initialized) {
+        Instance().SetEngineInitialized(p_Initialized);
+    }
+
     void RenderingHost::RegisterCallbacks(const knt::host::RenderingCallbacks* p_Callbacks) {
         // Defensive: if something else is still registered, drain it first.
         if (m_Callbacks.load(std::memory_order_acquire) != nullptr) {
@@ -165,5 +175,13 @@ namespace knt::rendering {
         // Leave the gate closed; the next Register() resets it.
         m_Gate.BeginReload();
         m_Callbacks.store(nullptr, std::memory_order_release);
+    }
+
+    bool RenderingHost::IsEngineInitialized() const {
+        return m_EngineInitialized.load(std::memory_order_acquire);
+    }
+
+    void RenderingHost::SetEngineInitialized(bool p_Initialized) {
+        m_EngineInitialized.store(p_Initialized, std::memory_order_release);
     }
 }

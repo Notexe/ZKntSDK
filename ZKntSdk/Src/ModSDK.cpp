@@ -159,6 +159,10 @@ namespace zknt {
         m_StartedUp = true;
         m_HostServices = p_HostServices;
 
+        if (m_HostServices && m_HostServices->IsEngineInitialized) {
+            m_EngineInitialized = m_HostServices->IsEngineInitialized();
+        }
+
         Logger::Info("SDK starting up.");
 
         m_Hooks = std::make_unique<zknt::Hooks>();
@@ -203,8 +207,11 @@ namespace zknt {
         });
 
         Hooks()->Engine_Init->AddDetour(this, &ModSDK::Engine_Init);
-        Hooks()->ZFreeCameraControlEntity_GenerateActionBindingString->AddDetour(this, &ModSDK::ZFreeCameraControlEntity_GenerateActionBindingString);
-        Hooks()->ZFreeCameraControlEntity_UpdateMovementFromInput->AddDetour(this, &ModSDK::ZFreeCameraControlEntity_UpdateMovementFromInput);
+
+        if (m_EngineInitialized) {
+            Logger::Info("Engine was already initialized before SDK load; replaying engine-init flow.");
+            HandleEngineInitialized(false);
+        }
     }
 
     zknt::Hooks* ModSDK::Hooks() {
@@ -245,6 +252,11 @@ namespace zknt {
 
     void ModSDK::OnModLoaded(const std::string& p_Name, IPluginInterface* p_Plugin, bool /*p_LiveLoad*/) const {
         Logger::Info("Mod '{}' loaded.", p_Name);
+
+        if (m_EngineInitialized && p_Plugin) {
+            p_Plugin->OnEngineInitialized();
+        }
+
         if (m_ModSelector && m_ModLoader) {
             m_ModSelector->UpdateAvailableMods(m_ModLoader->GetAvailableMods(), {}, m_ModLoader->GetActiveMods());
         }
@@ -288,10 +300,13 @@ namespace zknt {
         }
     }
 
-    DEFINE_DETOUR_WITH_CONTEXT(ModSDK, bool, Engine_Init, void* th, void* a2) {
-        auto s_Result = p_Hook->CallOriginal(th, a2);
-
-        Logger::Info("Engine has initialized!");
+    void ModSDK::HandleEngineInitialized(bool p_SyncHostState) {
+        if (!m_EngineInitialized) {
+            m_EngineInitialized = true;
+            if (p_SyncHostState && m_HostServices && m_HostServices->SetEngineInitialized) {
+                m_HostServices->SetEngineInitialized(true);
+            }
+        }
 
         if (m_ModLoader) {
             for (auto* s_Plugin : m_ModLoader->GetLoadedMods()) {
@@ -300,139 +315,15 @@ namespace zknt {
                 }
             }
         }
+    }
 
-        const ZMemberDelegate<ModSDK, void(const SGameUpdateEvent&)> s_Delegate(this, &ModSDK::OnFrameUpdate);
-        SDK()->Globals()->GameLoopManager->RegisterFrameUpdate(s_Delegate, 1, EUpdateMode::eUpdatePlayMode);
+    DEFINE_DETOUR_WITH_CONTEXT(ModSDK, bool, Engine_Init, void* th, void* a2) {
+        auto s_Result = p_Hook->CallOriginal(th, a2);
+
+        Logger::Info("Engine has initialized!");
+        HandleEngineInitialized(true);
 
         return {HookAction::Return(), s_Result};
     }
 
-    DEFINE_DETOUR_WITH_CONTEXT(
-        ModSDK, ZString*, ZFreeCameraControlEntity_GenerateActionBindingString, ZFreeCameraControlEntity* th, ZString& result, int nControllerId
-    ) {
-        ZString* res = p_Hook->CallOriginal(th, result, nControllerId);
-
-        result.m_pChars = "FreeCamControl0={"
-                          "TiltCamera=rel(ms,y);"
-                          "TurnCamera=rel(ms,x);"
-                          "MoveXPositive=| hold(kb,left) hold(kb,a);"
-                          "MoveXNegative=| hold(kb,right) hold(kb,d);"
-                          "MoveYPositive=| hold(kb,up) hold(kb,w);"
-                          "MoveYNegative=| hold(kb,down) hold(kb,s);"
-                          "MoveZPositive=| hold(kb,pgup) hold(kb,e);"
-                          "MoveZNegative=| hold(kb,pgdn) hold(kb,q);"
-                          "TiltTurnCameraFixedDegreeModifier=hold(kb,f);"
-                          "RollModifier=| hold(kb,lctrl) hold(kb,rctrl);"
-                          "FovModifier=| hold(kb,lctrl) hold(kb,rctrl);"
-                          "SpeedModifier=| hold(kb,lalt) hold(kb,ralt);"
-                          "MoveInWorldSpace=hold(kb,space);"
-                          "ResetRoll=hold(kb,x);"
-                          "ResetFov=hold(kb,z);"
-                          "ResetSpeed=hold(kb,z);"
-                          "AnalogCamXAxis0=ana(gc0,rightx);"
-                          "AnalogCamYAxis0=ana(gc0,righty);"
-                          "AnalogMoveXAxis0=ana(gc0,leftx);"
-                          "AnalogMoveYAxis0=ana(gc0,lefty);"
-                          "MoveInZDirection0=| hold(gc0,right_bumper) hold(gc0,right1);"
-                          "RollModifier0=| hold(gc0,a) hold(gc0,cross);"
-                          "RollAxis0=ana(gc0,leftx);"
-                          "ResetRoll0=| hold(gc0,leftstick) hold(gc0,left_thumb);"
-                          "FovModifier0=| hold(gc0,y) hold(gc0,triangle);"
-                          "FovAxis0=ana(gc0,lefty);"
-                          "ResetFov0=| hold(gc0,leftstick) hold(gc0,left_thumb);"
-                          "SpeedModifier0=| hold(gc0,b) hold(gc0,circle);"
-                          "SpeedTranslationAxis0=ana(gc0,lefty);"
-                          "SpeedRotationAxis0=ana(gc0,leftx);"
-                          "ResetSpeed0=| hold(gc0,leftstick) hold(gc0,left_thumb);"
-                          "MoveInWorldSpaceTrigger0=ana(gc0,left_analog_trigger);"
-                          "MoveInWorldSpaceButton0=hold(gc0,left2);"
-                          "MoveInWorldSpaceXAxis0=ana(gc0,leftx);"
-                          "MoveInWorldSpaceYAxis0=ana(gc0,lefty);"
-                          "MoveInWorldSpaceZAxis0=ana(gc0,righty);"
-                          "ActivateGameControl0=| hold(gc0,left_bumper) hold(gc0,left1);"
-                          "TemporaryCamSpeedMultiplierTrigger0=ana(gc0,right_analog_trigger);"
-                          "TemporaryCamSpeedMultiplierTrigger20=ana(gc0,right2_analog);"
-                          "TemporaryCamSpeedMultiplierLeftShift=hold(kb,lshift);"
-                          "TemporaryCamSpeedMultiplierRightShift=hold(kb,rshift);"
-                          "};";
-        ;
-
-        result.m_nLength = static_cast<uint32_t>(strlen(result.m_pChars)) | 0x80000000;
-
-        return {HookAction::Return(), res};
-    }
-
-    DEFINE_DETOUR_WITH_CONTEXT(ModSDK, void, ZFreeCameraControlEntity_UpdateMovementFromInput, ZFreeCameraControlEntity* th) {
-        th->UpdateMovementFromInput();
-        return {HookAction::Return()};
-    }
-
-    void ModSDK::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
-        if (GetAsyncKeyState('K') & 0x8000) {
-            ZInputAction* ac = reinterpret_cast<ZInputAction*>(0x1434510f0);
-
-            constexpr auto s_CameraEntityFactoryId = ResId<"[modules:/zcameraentity.class].entitytype">;
-
-            TResourcePtr<IEntityFactory> s_CamerEntityFactory;
-            SDK()->Globals()->ResourceManager->GetResourcePtr(s_CamerEntityFactory, s_CameraEntityFactoryId, 0);
-
-            if (!s_CamerEntityFactory) {
-                Logger::Error("Resource is not loaded!");
-            }
-
-            constexpr auto s_FreecameracontrolentityFactoryId = ResId<"[modules:/zfreecameracontrolentity.class].entitytype">;
-            // constexpr auto s_FreecameracontrolentityFactoryId = ResId<"[modules:/zfreecameracontroleditorstyleentity.class].entitytype">;
-
-            TResourcePtr<IEntityFactory> s_FreecameracontrolentityFactory;
-            SDK()->Globals()->ResourceManager->GetResourcePtr(s_FreecameracontrolentityFactory, s_FreecameracontrolentityFactoryId, 0);
-
-            if (!s_FreecameracontrolentityFactory) {
-                Logger::Error("Resource is not loaded!");
-            }
-
-            SEntityCreateInfo info;
-
-            // memset(&info, 0, sizeof(SEntityCreateInfo));
-
-            SDK()->Functions()->SEntityCreateInfo_SEntityCreateInfo->Call(&info, ZString(), s_CamerEntityFactory, ZEntityRef(), -1);
-
-            SDK()->Functions()->ZEntityManager_NewEntity->Call(SDK()->Globals()->EntityManager, m_pFreeCamera.m_entityRef, info);
-
-            m_pFreeCamera.m_pInterfaceRef = m_pFreeCamera.m_entityRef.QueryInterface<ZCameraEntity>();
-
-            SEntityCreateInfo info2;
-
-            // memset(&info2, 0, sizeof(SEntityCreateInfo));
-
-            SDK()->Functions()->SEntityCreateInfo_SEntityCreateInfo->Call(&info2, ZString(), s_FreecameracontrolentityFactory, ZEntityRef(), -1);
-
-            SDK()->Functions()->ZEntityManager_NewEntity->Call(SDK()->Globals()->EntityManager, m_pFreeCameraControl.m_entityRef, info2);
-
-            m_pFreeCameraControl.m_pInterfaceRef = m_pFreeCameraControl.m_entityRef.QueryInterface<ZFreeCameraControlEntity>();
-            m_pFreeCameraControl.m_pInterfaceRef->SetCameraEntity(m_pFreeCamera);
-            m_pFreeCameraControl.m_pInterfaceRef->SetActive(true);
-
-            /*SDK()->Functions()->ZEntityManager_NewEntity->Call(SDK()->Globals()->EntityManager, m_pFreeCameraControlEditorStyle.m_entityRef, info2);
-
-            m_pFreeCameraControlEditorStyle.m_pInterfaceRef =
-                m_pFreeCameraControlEditorStyle.m_entityRef.QueryInterface<ZFreeCameraControlEditorStyleEntity>();
-            m_pFreeCameraControlEditorStyle.m_pInterfaceRef->SetCameraEntity(m_pFreeCamera);
-            m_pFreeCameraControlEditorStyle.m_pInterfaceRef->SetActive(true);*/
-
-            TEntityRef<IRenderDestinationEntity> s_RenderDest;
-            SDK()->Globals()->CameraManagerMain->GetActiveRenderDestinationEntity(s_RenderDest);
-
-            /*TEntityRef<ZCameraEntity> cameraEntity;
-            const auto s_CurrentCamera =
-                SDK()->Functions()->ZCameraManagerMain_GetActiveMainCamera->Call(SDK()->Globals()->CameraManagerMain, cameraEntity);*/
-            // ZCameraEntity* cameraEntity = s_RenderDest.m_entityRef.QueryInterface<ZCameraEntity>();
-            const auto s_CurrentCamera = SDK()->Functions()->GetCurrentCamera->Call();
-
-            m_pFreeCamera.m_pInterfaceRef->SetObjectToWorldMatrixFromEditor(s_CurrentCamera->GetObjectToWorldMatrix());
-            // m_pFreeCamera.m_pInterfaceRef->SetObjectToWorldMatrixFromEditor(s_CurrentCamera->m_pInterfaceRef->GetObjectToWorldMatrix());
-            //  m_pFreeCamera.m_pInterfaceRef->SetObjectToWorldMatrixFromEditor(cameraEntity->GetObjectToWorldMatrix());
-
-            s_RenderDest.m_pInterfaceRef->SetSource(m_pFreeCamera.m_entityRef);
-        }
-    }
 }

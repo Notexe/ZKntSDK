@@ -417,6 +417,10 @@ namespace zknt {
         // Init on the recycled instance themselves.
         if (s_Mod->m_FirstLoadDone && p_Plugin) {
             p_Plugin->Init();
+
+            if (ModSDK::GetInstance()->IsEngineInitialized()) {
+                p_Plugin->OnEngineInitialized();
+            }
         }
     }
 
