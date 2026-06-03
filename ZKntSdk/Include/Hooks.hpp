@@ -7,6 +7,8 @@ class ZString;
 class ZApplicationEngineWin32;
 class ZEngineAppCommon;
 class ZFreeCameraControlEntity;
+class ZObjectRef;
+class ZEntityRef;
 
 namespace zknt {
     class ModSDK;
@@ -26,6 +28,8 @@ namespace zknt {
         Hook<ZString*(ZFreeCameraControlEntity* th, ZString& result, int nControllerId)>* ZFreeCameraControlEntity_GenerateActionBindingString;
         Hook<void(ZFreeCameraControlEntity* th)>* ZFreeCameraControlEntity_UpdateMovementFromInput;
         Hook<void(ZFreeCameraControlEntity* th, float dt)>* ZFreeCameraControlEntity_UpdateCamera;
+        Hook<bool(ZEntityRef, uint32_t, const ZObjectRef&)>* SignalOutputPin;
+        Hook<bool(ZEntityRef, uint32_t, const ZObjectRef&)>* SignalInputPin;
 
       private:
         void EnableAll();

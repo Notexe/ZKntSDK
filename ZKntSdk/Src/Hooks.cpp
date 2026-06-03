@@ -5,6 +5,7 @@
 #include <MinHook.h>
 
 #include <Glacier/ZString.hpp>
+#include <Glacier/ZEntity.hpp>
 
 std::unordered_set<HookBase*>* HookRegistry::g_Hooks = nullptr;
 
@@ -45,6 +46,16 @@ zknt::Hooks::Hooks() {
     PATTERN_HOOK(
         "\x48\x8B\xC4\x53\x48\x81\xEC\x00\x00\x00\x00\x48\x8B\xD9\x48\x8B\x49\x40", "xxxxxxx????xxxxxxx", ZFreeCameraControlEntity_UpdateCamera,
         void(ZFreeCameraControlEntity * th, float dt)
+    );
+
+    PATTERN_HOOK(
+        "\x48\x89\x74\x24\x20\x41\x56\x48\x83\xEC\x00\x48\x8B\x01\x49\x8B\xF0\x4C\x8B\xF1\x48\x8B\x40\x38", "xxxxxxxxxx?xxxxxxxxxxxxx",
+        SignalOutputPin, bool(ZEntityRef, uint32_t, const ZObjectRef&)
+    );
+
+    PATTERN_HOOK(
+        "\x48\x89\x6C\x24\x18\x56\x48\x83\xEC\x00\x48\x8B\x01\x49\x8B\xE8", "xxxxxxxxx?xxxxxx", SignalInputPin,
+        bool(ZEntityRef, uint32_t, const ZObjectRef&)
     );
 }
 
