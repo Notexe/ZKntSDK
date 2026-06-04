@@ -312,7 +312,7 @@ class ZEntityRef {
     }
 
     bool SetProperty(uint32_t p_PropertyId, const ZObjectRef& p_Value, bool p_InvokeChangeHandlers = true) {
-        return SDK()->Functions()->SetPropertyValue->Call(*m_pObj, p_PropertyId, p_Value, p_InvokeChangeHandlers);
+        return SDK()->Functions()->SetPropertyValue->Call(m_pObj, p_PropertyId, p_Value, p_InvokeChangeHandlers);
     }
 
     bool SetProperty(const ZString& p_PropertyName, const ZObjectRef& p_Value, bool p_InvokeChangeHandlers = true) {
@@ -352,7 +352,7 @@ class ZEntityRef {
     }
 
     void SignalInputPin(uint32_t p_PinId, const ZObjectRef& p_Data = ZObjectRef()) const {
-        SDK()->Hooks()->SignalInputPin->Call(*this, p_PinId, p_Data);
+        SDK()->Hooks()->SignalInputPin->Call(m_pObj, p_PinId, p_Data);
     }
 
     void SignalOutputPin(const ZString& p_PinName, const ZObjectRef& p_Data = ZObjectRef()) const {
@@ -360,7 +360,7 @@ class ZEntityRef {
     }
 
     void SignalOutputPin(uint32_t p_PinId, const ZObjectRef& p_Data = ZObjectRef()) const {
-        SDK()->Hooks()->SignalOutputPin->Call(*this, p_PinId, p_Data);
+        SDK()->Hooks()->SignalOutputPin->Call(m_pObj, p_PinId, p_Data);
     }
 
     ZEntityType** m_pObj = nullptr; // 0x0
@@ -389,4 +389,22 @@ struct SEntityCreateInfo {
     ZString m_EntityName;         // 0x20
     ZEntityRef m_TransformParent; // 0x30
     PAD(0x7C);
+};
+
+template<typename T> class TInterfaceRef {
+  public:
+    // TODO: Verify. Works for now but not 100% sure on the two ints.
+    static TInterfaceRef FromEntityRef(ZEntityRef p_Ref) {
+        const auto s_pInterface = p_Ref.QueryInterface<T>();
+
+        if (s_pInterface != nullptr) {
+            return {.m_pInterface = s_pInterface, .m_EntityIndex = p_Ref.m_EntityIndex, .m_Unk = p_Ref.m_Unk};
+        }
+
+        return {};
+    }
+
+    T* m_pInterface = nullptr;
+    uint32_t m_EntityIndex = 0;
+    uint32_t m_Unk = 0;
 };

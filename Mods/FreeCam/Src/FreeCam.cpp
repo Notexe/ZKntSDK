@@ -29,16 +29,35 @@ void FreeCam::CleanupSpawnedEntities() {
         m_FreeCameraControl.m_pInterfaceRef->SetActive(false);
     }
 
-    if (m_FreeCameraControl.m_entityRef) {
+    if (m_UnblockMove) {
+        m_UnblockMove.m_entityRef.SignalInputPin("Do");
+    }
+
+    if (m_FreeCameraControl) {
         SDK()->Functions()->ZEntityManager_DeleteEntity->Call(SDK()->Globals()->EntityManager, m_FreeCameraControl.m_entityRef);
     }
 
-    if (m_FreeCamera.m_entityRef) {
+    if (m_FreeCamera) {
         SDK()->Functions()->ZEntityManager_DeleteEntity->Call(SDK()->Globals()->EntityManager, m_FreeCamera.m_entityRef);
+    }
+
+    if (m_BlockMove) {
+        SDK()->Functions()->ZEntityManager_DeleteEntity->Call(SDK()->Globals()->EntityManager, m_BlockMove.m_entityRef);
+    }
+
+    if (m_UnblockMove) {
+        SDK()->Functions()->ZEntityManager_DeleteEntity->Call(SDK()->Globals()->EntityManager, m_UnblockMove.m_entityRef);
+    }
+
+    if (m_GetLocalPlayer) {
+        SDK()->Functions()->ZEntityManager_DeleteEntity->Call(SDK()->Globals()->EntityManager, m_GetLocalPlayer.m_entityRef);
     }
 
     m_FreeCameraControl = {};
     m_FreeCamera = {};
+    m_BlockMove = {};
+    m_UnblockMove = {};
+    m_GetLocalPlayer = {};
     m_PreviousCameraSource = {};
     m_Initialized = false;
 }
@@ -312,6 +331,8 @@ DEFINE_PLUGIN_DETOUR(FreeCam, void, ZFreeCameraControlEntity_UpdateCamera, ZFree
     return {HookAction::Return()};
 }
 
+class IIntValue;
+
 void FreeCam::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
     static_cast<void>(p_UpdateEvent);
 
@@ -359,6 +380,30 @@ void FreeCam::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
         return;
     }
 
+    constexpr auto s_BlockMoveFactoryId = ResId<"[modules:/zclblockhumanoidplayermoveinput.class].entitytype">;
+    TResourcePtr<IEntityFactory> s_BlockMoveFactory;
+    SDK()->Globals()->ResourceManager->GetResourcePtr(s_BlockMoveFactory, s_BlockMoveFactoryId, 0);
+    if (!s_BlockMoveFactory) {
+        Logger::Error("Block player move entity factory is not loaded.");
+        return;
+    }
+
+    constexpr auto s_UnblockMoveFactoryId = ResId<"[modules:/zclunblockhumanoidplayermoveinput.class].entitytype">;
+    TResourcePtr<IEntityFactory> s_UnblockMoveFactory;
+    SDK()->Globals()->ResourceManager->GetResourcePtr(s_UnblockMoveFactory, s_UnblockMoveFactoryId, 0);
+    if (!s_UnblockMoveFactory) {
+        Logger::Error("Unblock player move entity factory is not loaded.");
+        return;
+    }
+
+    constexpr auto s_GetPlayerFactoryId = ResId<"[modules:/zclgetlocalplayerid.class].entitytype">;
+    TResourcePtr<IEntityFactory> s_GetPlayerIdFactory;
+    SDK()->Globals()->ResourceManager->GetResourcePtr(s_GetPlayerIdFactory, s_GetPlayerFactoryId, 0);
+    if (!s_GetPlayerIdFactory) {
+        Logger::Error("Get player id entity factory is not loaded.");
+        return;
+    }
+
     SEntityCreateInfo s_CameraInfo;
     SDK()->Functions()->SEntityCreateInfo_SEntityCreateInfo->Call(&s_CameraInfo, ZString(), s_CameraEntityFactory, ZEntityRef(), -1);
     SDK()->Functions()->ZEntityManager_NewEntity->Call(SDK()->Globals()->EntityManager, m_FreeCamera.m_entityRef, s_CameraInfo);
@@ -377,6 +422,33 @@ void FreeCam::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
         return;
     }
 
+    SEntityCreateInfo s_BlockMoveInfo;
+    SDK()->Functions()->SEntityCreateInfo_SEntityCreateInfo->Call(&s_BlockMoveInfo, ZString(), s_BlockMoveFactory, ZEntityRef(), -1);
+    SDK()->Functions()->ZEntityManager_NewEntity->Call(SDK()->Globals()->EntityManager, m_BlockMove.m_entityRef, s_BlockMoveInfo);
+    m_BlockMove.m_pInterfaceRef = m_BlockMove.m_entityRef.QueryInterface<ZCLBlockHumanoidPlayerMoveInput>();
+    if (!m_BlockMove.m_pInterfaceRef) {
+        Logger::Error("Failed to create block move entity.");
+        return;
+    }
+
+    SEntityCreateInfo s_UnblockMoveInfo;
+    SDK()->Functions()->SEntityCreateInfo_SEntityCreateInfo->Call(&s_UnblockMoveInfo, ZString(), s_UnblockMoveFactory, ZEntityRef(), -1);
+    SDK()->Functions()->ZEntityManager_NewEntity->Call(SDK()->Globals()->EntityManager, m_UnblockMove.m_entityRef, s_UnblockMoveInfo);
+    m_UnblockMove.m_pInterfaceRef = m_UnblockMove.m_entityRef.QueryInterface<ZCLUnblockHumanoidPlayerMoveInput>();
+    if (!m_UnblockMove.m_pInterfaceRef) {
+        Logger::Error("Failed to create unblock move entity.");
+        return;
+    }
+
+    SEntityCreateInfo s_GetPlayerInfo;
+    SDK()->Functions()->SEntityCreateInfo_SEntityCreateInfo->Call(&s_GetPlayerInfo, ZString(), s_GetPlayerIdFactory, ZEntityRef(), -1);
+    SDK()->Functions()->ZEntityManager_NewEntity->Call(SDK()->Globals()->EntityManager, m_GetLocalPlayer.m_entityRef, s_GetPlayerInfo);
+    m_GetLocalPlayer.m_pInterfaceRef = m_GetLocalPlayer.m_entityRef.QueryInterface<ZCLGetLocalPlayerID>();
+    if (!m_GetLocalPlayer.m_pInterfaceRef) {
+        Logger::Error("Failed to create get player entity.");
+        return;
+    }
+
     m_FreeCameraControl.m_pInterfaceRef->SetCameraEntity(m_FreeCamera);
     m_FreeCameraControl.m_pInterfaceRef->SetActive(true);
 
@@ -392,6 +464,14 @@ void FreeCam::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
     m_PreviousCameraSource = s_RenderDest.m_pInterfaceRef->GetSource();
     s_RenderDest.m_pInterfaceRef->SetSource(m_FreeCamera.m_entityRef);
     Logger::Info("Enabled free camera!");
+
+    // Set up player input (un)blocking entities and block player input.
+    const auto s_IntRef = TInterfaceRef<IIntValue>::FromEntityRef(m_GetLocalPlayer.m_entityRef);
+
+    m_BlockMove.m_entityRef.SetProperty("m_playerID", s_IntRef);
+    m_UnblockMove.m_entityRef.SetProperty("m_playerID", s_IntRef);
+
+    m_BlockMove.m_entityRef.SignalInputPin("Do");
 
     m_Initialized = false;
 }

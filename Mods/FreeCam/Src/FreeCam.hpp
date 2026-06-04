@@ -3,6 +3,12 @@
 #include <IPluginInterface.hpp>
 #include <Glacier/ZCamera.hpp>
 
+class ZCLBlockHumanoidPlayerMoveInput : public ZEntityImpl {};
+
+class ZCLUnblockHumanoidPlayerMoveInput : public ZEntityImpl {};
+
+class ZCLGetLocalPlayerID : public ZEntityImpl {};
+
 class FreeCam : public zknt::IPluginInterface {
   public:
     ~FreeCam() override;
@@ -12,8 +18,7 @@ class FreeCam : public zknt::IPluginInterface {
 
   private:
     DECLARE_PLUGIN_DETOUR(
-        FreeCam, ZString*, ZFreeCameraControlEntity_GenerateActionBindingString, ZFreeCameraControlEntity* p_Th, ZString& p_Result,
-        int p_ControllerId
+        FreeCam, ZString*, ZFreeCameraControlEntity_GenerateActionBindingString, ZFreeCameraControlEntity* p_Th, ZString& p_Result, int p_ControllerId
     );
     DECLARE_PLUGIN_DETOUR(FreeCam, void, ZFreeCameraControlEntity_UpdateCamera, ZFreeCameraControlEntity* p_Th, float p_Dt);
 
@@ -23,6 +28,9 @@ class FreeCam : public zknt::IPluginInterface {
 
     TEntityRef<ZCameraEntity> m_FreeCamera;
     TEntityRef<ZFreeCameraControlEntity> m_FreeCameraControl;
+    TEntityRef<ZCLBlockHumanoidPlayerMoveInput> m_BlockMove;
+    TEntityRef<ZCLUnblockHumanoidPlayerMoveInput> m_UnblockMove;
+    TEntityRef<ZCLGetLocalPlayerID> m_GetLocalPlayer;
     ZEntityRef m_PreviousCameraSource;
     bool m_FrameUpdateRegistered = false;
     bool m_SpawnKeyHeld = false;

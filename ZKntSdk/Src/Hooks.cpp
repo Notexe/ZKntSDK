@@ -50,12 +50,12 @@ zknt::Hooks::Hooks() {
 
     PATTERN_HOOK(
         "\x48\x89\x74\x24\x20\x41\x56\x48\x83\xEC\x00\x48\x8B\x01\x49\x8B\xF0\x4C\x8B\xF1\x48\x8B\x40\x38", "xxxxxxxxxx?xxxxxxxxxxxxx",
-        SignalOutputPin, void(const ZEntityRef&, uint32_t, const ZObjectRef&)
+        SignalOutputPin, void(ZEntityType**, uint32_t, const ZObjectRef&)
     );
 
     PATTERN_HOOK(
         "\x48\x89\x6C\x24\x18\x56\x48\x83\xEC\x00\x48\x8B\x01\x49\x8B\xE8", "xxxxxxxxx?xxxxxx", SignalInputPin,
-        void(const ZEntityRef&, uint32_t, const ZObjectRef&)
+        void(ZEntityType**, uint32_t, const ZObjectRef&)
     );
 }
 

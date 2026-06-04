@@ -58,7 +58,7 @@ zknt::Functions::Functions() {
 
     PATTERN_FUNCTION(
         "\x48\x89\x5C\x24\x18\x48\x89\x6C\x24\x20\x41\x54\x41\x56\x41\x57\x48\x83\xEC\x00\x48\x8B\x29", "xxxxxxxxxxxxxxxxxxx?xxx", SetPropertyValue,
-        bool(ZEntityType * entity, uint32_t propertyId, const ZObjectRef& value, bool invokeChangeHandlers)
+        bool(ZEntityType * *entity, uint32_t propertyId, const ZObjectRef& value, bool invokeChangeHandlers)
     );
 
     PATTERN_FUNCTION("\x40\x53\x48\x83\xEC\x00\x33\xDB\x89\x5C\x24\x40", "xxxxx?xxxxxx", GetGlobalInputContext, ZInputContext * ());

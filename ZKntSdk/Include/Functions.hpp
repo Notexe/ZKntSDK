@@ -57,7 +57,7 @@ namespace zknt {
 
         EngineFunction<bool(ZInputAction* th)>* ZInputAction_Digital = nullptr;
 
-        EngineFunction<bool(ZEntityType* entity, uint32_t propertyId, const ZObjectRef& value, bool invokeChangeHandlers)>* SetPropertyValue =
+        EngineFunction<bool(ZEntityType** entity, uint32_t propertyId, const ZObjectRef& value, bool invokeChangeHandlers)>* SetPropertyValue =
             nullptr;
 
         EngineFunction<ZInputContext*()>* GetGlobalInputContext = nullptr;
