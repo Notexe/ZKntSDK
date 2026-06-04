@@ -53,13 +53,6 @@ struct SExposedEntityData {
     TArray<int64_t> m_aEntityOffsets; // 0x18
 };
 
-struct SSubsetData {
-    ZString m_sSubsetName;                                 // 0x0
-    uint32 m_nSubsetFlags;                                 // 0x10
-    TArray<int64_t> m_aEntityOffsets;                      // 0x18
-    TArray<TPair<int64_t, SSubsetData*>> m_aEntitySubsets; // 0x30
-};
-
 struct SPinData {
     int64_t m_nOffsetToThisPtr; // 0x0
     SPinInfo m_pInfo;           // 0x8
