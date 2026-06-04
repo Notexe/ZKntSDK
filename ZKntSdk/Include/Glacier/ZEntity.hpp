@@ -354,20 +354,20 @@ class ZEntityRef {
         );
     }
 
-    bool SignalInputPin(const ZString& p_PinName, const ZObjectRef& p_Data = ZObjectRef()) const {
-        return SignalInputPin(Hash::Crc32(p_PinName.c_str(), p_PinName.size()), p_Data);
+    void SignalInputPin(const ZString& p_PinName, const ZObjectRef& p_Data = ZObjectRef()) const {
+        SignalInputPin(Hash::Crc32(p_PinName.c_str(), p_PinName.size()), p_Data);
     }
 
-    bool SignalInputPin(uint32_t p_PinId, const ZObjectRef& p_Data = ZObjectRef()) const {
-        return SDK()->Hooks()->SignalInputPin->Call(*this, p_PinId, p_Data);
+    void SignalInputPin(uint32_t p_PinId, const ZObjectRef& p_Data = ZObjectRef()) const {
+        SDK()->Hooks()->SignalInputPin->Call(*this, p_PinId, p_Data);
     }
 
-    bool SignalOutputPin(const ZString& p_PinName, const ZObjectRef& p_Data = ZObjectRef()) const {
-        return SignalOutputPin(Hash::Crc32(p_PinName.c_str(), p_PinName.size()), p_Data);
+    void SignalOutputPin(const ZString& p_PinName, const ZObjectRef& p_Data = ZObjectRef()) const {
+        SignalOutputPin(Hash::Crc32(p_PinName.c_str(), p_PinName.size()), p_Data);
     }
 
-    bool SignalOutputPin(uint32_t p_PinId, const ZObjectRef& p_Data = ZObjectRef()) const {
-        return SDK()->Hooks()->SignalOutputPin->Call(*this, p_PinId, p_Data);
+    void SignalOutputPin(uint32_t p_PinId, const ZObjectRef& p_Data = ZObjectRef()) const {
+        SDK()->Hooks()->SignalOutputPin->Call(*this, p_PinId, p_Data);
     }
 
     ZEntityType** m_pObj = nullptr; // 0x0

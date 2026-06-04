@@ -28,8 +28,8 @@ namespace zknt {
         Hook<ZString*(ZFreeCameraControlEntity* th, ZString& result, int nControllerId)>* ZFreeCameraControlEntity_GenerateActionBindingString;
         Hook<void(ZFreeCameraControlEntity* th)>* ZFreeCameraControlEntity_UpdateMovementFromInput;
         Hook<void(ZFreeCameraControlEntity* th, float dt)>* ZFreeCameraControlEntity_UpdateCamera;
-        Hook<bool(ZEntityRef, uint32_t, const ZObjectRef&)>* SignalOutputPin;
-        Hook<bool(ZEntityRef, uint32_t, const ZObjectRef&)>* SignalInputPin;
+        Hook<void(const ZEntityRef&, uint32_t, const ZObjectRef&)>* SignalOutputPin;
+        Hook<void(const ZEntityRef&, uint32_t, const ZObjectRef&)>* SignalInputPin;
 
       private:
         void EnableAll();
