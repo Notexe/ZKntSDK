@@ -19,6 +19,7 @@ class ZString {
       public:
         uint32_t m_nAllocatedSize;
         volatile long m_nRefcount;
+        uint32_t m_nHash;
         ZImpl* m_pNext;
         char m_pDataStart[0]; // String data starts at the end of this struct.
     };
