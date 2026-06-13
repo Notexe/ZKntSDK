@@ -57,6 +57,7 @@ add_library(ZKntSdkInterface INTERFACE)
 target_include_directories(ZKntSdkInterface INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/Include
         ${CR_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/External/IconFontCppHeaders
 )
 target_link_libraries(ZKntSdkInterface INTERFACE
         spdlog::spdlog_header_only
