@@ -22,7 +22,7 @@ class IClothProvider : public IComponentInterface {
     virtual ~IClothProvider() = 0;
 };
 
-class IAnimationPreviewTarget : public IBoneCollidable, public ISpawnableEntity, public IClothProvider {
+class IAnimationPreviewTarget {
   public:
     virtual ~IAnimationPreviewTarget() = 0;
 };
