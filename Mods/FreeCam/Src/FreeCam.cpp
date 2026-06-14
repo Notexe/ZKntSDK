@@ -14,7 +14,17 @@
 class IIntValue;
 
 FreeCam::FreeCam()
-    : m_FreeCamActive(false), m_ShouldToggle(false), m_ToggleFreeCamAction("ToggleFreeCamera"), m_MenuVisible(false), m_ControlsVisible(false) {
+    : m_IsFreeCamActive(false)
+    , m_ShouldToggle(false)
+    , m_GamePaused(false)
+    , m_MoveInFreecam(false)
+    , m_IsPlayerInputEnabled(true)
+    , m_IsFreeCamFrozen(false)
+    , m_ToggleFreeCamAction("ToggleFreeCamera")
+    , m_ActivatePlayerInputAction("ActivatePlayerInput")
+    , m_TogglePauseGame("TogglePauseGame")
+    , m_MenuVisible(false)
+    , m_ControlsVisible(false) {
     m_PcControls = {
         {"K", "Toggle freecam"},
         {"F3", "Lock camera and enable 47 input"},
@@ -84,7 +94,9 @@ void FreeCam::OnEngineInitialized() {
     m_FrameUpdateRegistered = true;
 
     const char* s_Bindings = "FreeCameraInput={"
-                             "ToggleFreeCamera=tap(kb,k);};";
+                             "ToggleFreeCamera=tap(kb,k);"
+                             "TogglePauseGame=tap(kb,f8);"
+                             "ActivatePlayerInput=tap(kb,f3);};";
 
     ZInputContext* s_InputContext = SDK()->Functions()->GetGlobalInputContext->Call();
 
@@ -107,10 +119,26 @@ void FreeCam::OnDrawUI(bool p_HasFocus) {
         ImGui::PushFont(SDK()->GetImGuiRegularFont());
 
         if (s_MenuExpanded) {
-            bool s_FreeCamActive = m_FreeCamActive;
+            bool s_IsFreeCamActive = m_IsFreeCamActive;
 
-            if (ImGui::Checkbox(ICON_MD_PHOTO_CAMERA " Enable freecam", &s_FreeCamActive)) {
+            if (ImGui::Checkbox(ICON_MD_PHOTO_CAMERA " Enable freecam", &s_IsFreeCamActive)) {
                 ToggleFreecam();
+            }
+
+            bool s_IsPlayerInputEnabled = m_IsPlayerInputEnabled;
+
+            if (ImGui::Checkbox("Enable player input", &s_IsPlayerInputEnabled)) {
+                TogglePlayerInput();
+            }
+
+            if (ImGui::Checkbox("Pause game in freecam", &m_GamePaused)) {
+                if (m_IsFreeCamActive) {
+                    SDK()->Globals()->GameTimeManager->m_bPaused = m_GamePaused;
+                }
+            }
+
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Whether the Hitman should move along with the camera when in freecam.");
             }
 
             if (ImGui::Button(ICON_MD_SPORTS_ESPORTS " Show freecam controls")) {
@@ -174,17 +202,29 @@ void FreeCam::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
     if (m_ShouldToggle) {
         m_ShouldToggle = false;
 
-        if (m_FreeCamActive) {
+        if (m_IsFreeCamActive) {
             EnableFreecam();
         }
         else {
             DisableFreecam();
         }
     }
+
+    if (m_IsFreeCamActive) {
+        if (m_TogglePauseGame.Digital()) {
+            m_GamePaused = !m_GamePaused;
+            SDK()->Globals()->GameTimeManager->m_bPaused = m_GamePaused;
+        }
+
+        if (m_ActivatePlayerInputAction.Digital()) {
+            TogglePlayerInput();
+            SetFreeCamFrozen(m_IsPlayerInputEnabled);
+        }
+    }
 }
 
 void FreeCam::ToggleFreecam() {
-    m_FreeCamActive = !m_FreeCamActive;
+    m_IsFreeCamActive = !m_IsFreeCamActive;
     m_ShouldToggle = true;
 }
 
@@ -251,7 +291,9 @@ void FreeCam::EnableFreecam() {
     m_BlockMove.m_entityRef.SetProperty("m_playerID", s_IntRef);
     m_UnblockMove.m_entityRef.SetProperty("m_playerID", s_IntRef);
 
-    m_BlockMove.m_entityRef.SignalInputPin("Do");
+    if (!m_IsPlayerInputEnabled) {
+        m_BlockMove.m_entityRef.SignalInputPin("Do");
+    }
 
     m_Initialized = false;
 }
@@ -271,6 +313,29 @@ void FreeCam::DisableFreecam() {
 
         CleanupSpawnedEntities();
         Logger::Info("Disabled free camera and restored previous camera source.");
+    }
+}
+
+void FreeCam::TogglePlayerInput() {
+    m_IsPlayerInputEnabled = !m_IsPlayerInputEnabled;
+
+    if (m_IsPlayerInputEnabled) {
+        if (m_UnblockMove) {
+            m_UnblockMove.m_entityRef.SignalInputPin("Do");
+        }
+    }
+    else {
+        if (m_BlockMove) {
+            m_BlockMove.m_entityRef.SignalInputPin("Do");
+        }
+    }
+}
+
+void FreeCam::SetFreeCamFrozen(bool p_Frozen) {
+    m_IsFreeCamFrozen = p_Frozen;
+
+    if (m_FreeCameraControl.m_pInterfaceRef) {
+        m_FreeCameraControl.m_pInterfaceRef->m_bActive = !p_Frozen;
     }
 }
 

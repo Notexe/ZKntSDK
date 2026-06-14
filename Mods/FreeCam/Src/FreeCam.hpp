@@ -25,6 +25,8 @@ class FreeCam : public zknt::IPluginInterface {
     void ToggleFreecam();
     void EnableFreecam();
     void DisableFreecam();
+    void TogglePlayerInput();
+    void SetFreeCamFrozen(bool p_Frozen);
 
     bool HasSpawnedEntities() const;
     void CleanupSpawnedEntities();
@@ -34,10 +36,16 @@ class FreeCam : public zknt::IPluginInterface {
     );
     DECLARE_PLUGIN_DETOUR(FreeCam, void, ZFreeCameraControlEntity_UpdateCamera, ZFreeCameraControlEntity* p_Th, float p_Dt);
 
-    bool m_FreeCamActive;
+    bool m_IsFreeCamActive;
     bool m_ShouldToggle;
+    bool m_GamePaused;
+    bool m_MoveInFreecam;
+    bool m_IsPlayerInputEnabled;
+    bool m_IsFreeCamFrozen;
 
     ZInputAction m_ToggleFreeCamAction;
+    ZInputAction m_ActivatePlayerInputAction;
+    ZInputAction m_TogglePauseGame;
 
     bool m_MenuVisible;
     bool m_ControlsVisible;
