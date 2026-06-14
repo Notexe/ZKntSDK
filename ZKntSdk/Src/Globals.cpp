@@ -42,4 +42,9 @@ zknt::Globals::Globals() {
         "\xC3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x48\x89\x5C\x24\x10",
         "xxx????xxxx?xxxxxxxxxxxxxxxxxxxxxxxx????????????xxxxx", 3, ZLocalPlayerData*, LocalPlayerData
     );
+
+    PATTERN_RELATIVE_GLOBAL(
+        "\x48\x89\x05\x00\x00\x00\x00\x48\x8D\x4C\x24\x30\x48\x8D\x05\x00\x00\x00\x00\x48\x89\x35", "xxx????xxxxxxxx????xxx", 3, ZGameTimeManager*,
+        GameTimeManager
+    );
 }

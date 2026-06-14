@@ -13,6 +13,7 @@ class ZResourceManager;
 class ZTypeRegistry;
 class ZGameLoopManager;
 class ZLocalPlayerData;
+class ZGameTimeManager;
 
 namespace zknt {
     class Globals {
@@ -33,5 +34,6 @@ namespace zknt {
         ZTypeRegistry** TypeRegistry = nullptr;
         ZGameLoopManager* GameLoopManager = nullptr;
         ZLocalPlayerData* LocalPlayerData = nullptr;
+        ZGameTimeManager* GameTimeManager = nullptr;
     };
 }
