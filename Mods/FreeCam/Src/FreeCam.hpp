@@ -27,9 +27,21 @@ class FreeCam : public zknt::IPluginInterface {
     void CleanupSpawnedEntities();
 
     DECLARE_PLUGIN_DETOUR(
-        FreeCam, ZString*, ZFreeCameraControlEntity_GenerateActionBindingString, ZFreeCameraControlEntity* p_Th, ZString& p_Result, int p_ControllerId
+        FreeCam, ZString*, ZFreeCameraControlEntity_GenerateActionBindingString, ZFreeCameraControlEntity* p_Th, ZString& p_Result,
+        int32_t p_ControllerId
     );
     DECLARE_PLUGIN_DETOUR(FreeCam, void, ZFreeCameraControlEntity_UpdateCamera, ZFreeCameraControlEntity* p_Th, float p_Dt);
+    DECLARE_PLUGIN_DETOUR(
+        FreeCam, ZString*, ZFreeCameraControlEditorStyleEntity_GenerateActionBindingString, ZFreeCameraControlEditorStyleEntity* p_Th,
+        ZString& p_Result, int32_t p_ControllerId
+    );
+    DECLARE_PLUGIN_DETOUR(
+        FreeCam, void, ZFreeCameraControlEditorStyleEntity_HandleDrag, ZFreeCameraControlEditorStyleEntity* const th, bool bRotationIsActive,
+        bool bObjectHookIsActive, bool bIsOrbitActive
+    );
+    DECLARE_PLUGIN_DETOUR(
+        FreeCam, void, ZFreeCameraControlEditorStyleEntity_MoveCameraWithKey, ZFreeCameraControlEditorStyleEntity* th, float fDeltaTime
+    );
 
     bool m_IsFreeCamActive;
     bool m_ShouldToggle;
@@ -37,6 +49,7 @@ class FreeCam : public zknt::IPluginInterface {
     bool m_MoveInFreecam;
     bool m_IsPlayerInputEnabled;
     bool m_IsFreeCamFrozen;
+    bool m_IsEditorStyleFreeCamEnabled;
 
     ZInputAction m_ToggleFreeCamAction;
     ZInputAction m_ActivatePlayerInputAction;
@@ -50,6 +63,7 @@ class FreeCam : public zknt::IPluginInterface {
 
     TEntityRef<ZCameraEntity> m_FreeCamera;
     TEntityRef<ZFreeCameraControlEntity> m_FreeCameraControl;
+    TEntityRef<ZFreeCameraControlEditorStyleEntity> m_FreeCameraControlEditorStyle;
     TEntityRef<ZCLBlockHumanoidPlayerMoveInput> m_BlockHumanoidPlayerMoveInput;
     TEntityRef<ZCLUnblockHumanoidPlayerMoveInput> m_UnblockHumanoidPlayerMoveInput;
     TEntityRef<ZCLBlockPlayerGadgetInput> m_BlockPlayerGadgetInput;

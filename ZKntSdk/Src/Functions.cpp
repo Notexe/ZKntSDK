@@ -87,6 +87,28 @@ zknt::Functions::Functions() {
         "\x48\x89\x5C\x24\x18\x48\x89\x74\x24\x20\x41\x56\x48\x83\xEC\x00\x48\x8B\xF1", "xxxxxxxxxxxxxxx?xxx", ZString_ZImpl_Free,
         void(ZString::ZImpl * th)
     );
+
+    PATTERN_FUNCTION(
+        "\x4C\x8B\xDC\x49\x89\x5B\x18\x49\x89\x73\x20\x41\x54\x41\x55", "xxxxxxxxxxxxxxx", ZCameraUtil_PanCamera,
+        void(TEntityRef<ICameraEntity> pCamera, TEntityRef<ZSpatialEntity> pCameraSpatial, const float4& vMouseDelta, const float4& vHookPoint)
+    );
+
+    PATTERN_FUNCTION(
+        "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x48\x89\x7C\x24\x18\x41\x56\x48\x81\xEC\x00\x00\x00\x00\x44\x8B\x49\x48",
+        "xxxxxxxxxxxxxxxxxxxx????xxxx", ZFreeCameraControlEditorStyleEntity_OrbitCamera,
+        void(ZFreeCameraControlEditorStyleEntity * th, float4 orbitDelta, float4 orbitCenter)
+    );
+
+    PATTERN_FUNCTION(
+        "\x48\x8B\xC4\x48\x89\x58\x08\x48\x89\x70\x10\x57\x48\x81\xEC\x00\x00\x00\x00\x48\x8B\xBC\x24\x30\x01\x00\x00", "xxxxxxxxxxxxxxx????xxxxxxxx",
+        ZCameraUtil_RotateCameraToWorldMatrix,
+        SMatrix * (SMatrix & result, SMatrix cameraToWorld, float yawDelta, float pitchDelta, const float4& orbitCenter)
+    );
+
+    PATTERN_FUNCTION(
+        "\x48\x81\xEC\x00\x00\x00\x00\x48\x83\x79\x50\x00\x4C\x8B\xD2", "xxx????xxxx?xxx", ZFreeCameraControlEditorStyleEntity_ApplyCameraMatrix,
+        void(ZFreeCameraControlEditorStyleEntity * th, const SMatrix& mCameraToWorld)
+    );
 }
 
 zknt::Functions::~Functions() {

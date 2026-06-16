@@ -35,7 +35,7 @@ zknt::Hooks::Hooks() {
         "\x44\x89\x44\x24\x18\x48\x89\x54\x24\x10\x48\x89\x4C\x24\x08\x55\x53\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8D\x6C\x24\xC8\x48\x81\xEC"
         "\x00\x00\x00\x00\x48\x8D\x4C\x24\x70",
         "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????xxxxx", ZFreeCameraControlEntity_GenerateActionBindingString,
-        ZString * (ZFreeCameraControlEntity * th, ZString & result, int nControllerId)
+        ZString * (ZFreeCameraControlEntity * th, ZString & result, int32_t nControllerId)
     );
 
     PATTERN_HOOK(
@@ -56,6 +56,23 @@ zknt::Hooks::Hooks() {
     PATTERN_HOOK(
         "\x48\x89\x6C\x24\x18\x56\x48\x83\xEC\x00\x48\x8B\x01\x49\x8B\xE8", "xxxxxxxxx?xxxxxx", SignalInputPin,
         void(ZEntityType**, uint32_t, const ZObjectRef&)
+    );
+
+    PATTERN_HOOK(
+        "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x18\x48\x89\x7C\x24\x20\x48\x89\x54\x24\x10\x55\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8D\x6C\x24\xC9\x48"
+        "\x81\xEC\x00\x00\x00\x00\x33\xFF",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????xx", ZFreeCameraControlEditorStyleEntity_GenerateActionBindingString,
+        ZString * (ZFreeCameraControlEditorStyleEntity * th, ZString & result, int32_t nControllerId)
+    );
+
+    PATTERN_HOOK(
+        "\x40\x53\x48\x81\xEC\x00\x00\x00\x00\x48\x8B\xD9\x84\xD2", "xxxxx????xxxxx", ZFreeCameraControlEditorStyleEntity_HandleDrag,
+        void(ZFreeCameraControlEditorStyleEntity* const th, bool bRotationIsActive, bool bObjectHookIsActive, bool bIsOrbitActive)
+    );
+
+    PATTERN_HOOK(
+        "\x4C\x8B\xDC\x53\x48\x81\xEC\x00\x00\x00\x00\x48\x83\x79\x50", "xxxxxxx????xxxx", ZFreeCameraControlEditorStyleEntity_MoveCameraWithKey,
+        void(ZFreeCameraControlEditorStyleEntity * th, float fDeltaTime)
     );
 }
 

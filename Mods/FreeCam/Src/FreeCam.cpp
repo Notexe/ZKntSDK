@@ -20,6 +20,7 @@ FreeCam::FreeCam()
     , m_MoveInFreecam(false)
     , m_IsPlayerInputEnabled(false)
     , m_IsFreeCamFrozen(false)
+    , m_IsEditorStyleFreeCamEnabled(false)
     , m_ToggleFreeCamAction("ToggleFreeCamera")
     , m_ActivatePlayerInputAction("ActivatePlayerInput")
     , m_TogglePauseGame("TogglePauseGame")
@@ -82,6 +83,13 @@ void FreeCam::Init() {
         this, &FreeCam::ZFreeCameraControlEntity_GenerateActionBindingString
     );
     SDK()->Hooks()->ZFreeCameraControlEntity_UpdateCamera->AddDetour(this, &FreeCam::ZFreeCameraControlEntity_UpdateCamera);
+    SDK()->Hooks()->ZFreeCameraControlEditorStyleEntity_GenerateActionBindingString->AddDetour(
+        this, &FreeCam::ZFreeCameraControlEditorStyleEntity_GenerateActionBindingString
+    );
+    SDK()->Hooks()->ZFreeCameraControlEditorStyleEntity_HandleDrag->AddDetour(this, &FreeCam::ZFreeCameraControlEditorStyleEntity_HandleDrag);
+    SDK()->Hooks()->ZFreeCameraControlEditorStyleEntity_MoveCameraWithKey->AddDetour(
+        this, &FreeCam::ZFreeCameraControlEditorStyleEntity_MoveCameraWithKey
+    );
 }
 
 void FreeCam::OnEngineInitialized() {
@@ -125,6 +133,10 @@ void FreeCam::OnDrawUI(bool p_HasFocus) {
                 ToggleFreecam();
             }
 
+            ImGui::BeginDisabled(s_IsFreeCamActive);
+            ImGui::Checkbox("Use editor style freecam", &m_IsEditorStyleFreeCamEnabled);
+            ImGui::EndDisabled();
+
             bool s_IsPlayerInputEnabled = m_IsPlayerInputEnabled;
 
             if (ImGui::Checkbox("Enable player input", &s_IsPlayerInputEnabled)) {
@@ -161,12 +173,23 @@ void FreeCam::OnDrawUI(bool p_HasFocus) {
 
             ImGui::BeginTable("FreeCamControlsPc", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
 
-            for (auto& [s_Key, s_Description] : m_PcControls) {
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted(s_Key.c_str());
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted(s_Description.c_str());
+            if (m_IsEditorStyleFreeCamEnabled) {
+                for (auto& [s_Key, s_Description] : m_PcControlsEditorStyle) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(s_Key.c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(s_Description.c_str());
+                }
+            }
+            else {
+                for (auto& [s_Key, s_Description] : m_PcControls) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(s_Key.c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(s_Description.c_str());
+                }
             }
 
             ImGui::EndTable();
@@ -239,11 +262,22 @@ void FreeCam::EnableFreecam() {
         return;
     }
 
-    m_FreeCameraControl = TEntityRef<ZFreeCameraControlEntity>::SpawnEntity(ResId<"[modules:/zfreecameracontrolentity.class].entitytype">);
-    if (!m_FreeCameraControl) {
-        Logger::Error("Failed to create free camera control entity.");
-        CleanupSpawnedEntities();
-        return;
+    if (m_IsEditorStyleFreeCamEnabled) {
+        m_FreeCameraControlEditorStyle =
+            TEntityRef<ZFreeCameraControlEditorStyleEntity>::SpawnEntity(ResId<"[modules:/zfreecameracontroleditorstyleentity.class].entitytype">);
+        if (!m_FreeCameraControlEditorStyle) {
+            Logger::Error("Failed to create free camera control editor style entity.");
+            CleanupSpawnedEntities();
+            return;
+        }
+    }
+    else {
+        m_FreeCameraControl = TEntityRef<ZFreeCameraControlEntity>::SpawnEntity(ResId<"[modules:/zfreecameracontrolentity.class].entitytype">);
+        if (!m_FreeCameraControl) {
+            Logger::Error("Failed to create free camera control entity.");
+            CleanupSpawnedEntities();
+            return;
+        }
     }
 
     m_BlockHumanoidPlayerMoveInput =
@@ -301,8 +335,14 @@ void FreeCam::EnableFreecam() {
         return;
     }
 
-    m_FreeCameraControl->SetCameraEntity(m_FreeCamera);
-    m_FreeCameraControl->SetActive(true);
+    if (m_IsEditorStyleFreeCamEnabled) {
+        m_FreeCameraControlEditorStyle->SetCameraEntity(m_FreeCamera);
+        m_FreeCameraControlEditorStyle->SetActive(true);
+    }
+    else {
+        m_FreeCameraControl->SetCameraEntity(m_FreeCamera);
+        m_FreeCameraControl->SetActive(true);
+    }
 
     TEntityRef<IRenderDestinationEntity> s_RenderDest;
     SDK()->Globals()->CameraManagerMain->GetActiveRenderDestinationEntity(s_RenderDest);
@@ -395,13 +435,20 @@ void FreeCam::TogglePlayerInput() {
 void FreeCam::SetFreeCamFrozen(bool p_Frozen) {
     m_IsFreeCamFrozen = p_Frozen;
 
-    if (m_FreeCameraControl.m_pInterfaceRef) {
-        m_FreeCameraControl.m_pInterfaceRef->m_bActive = !p_Frozen;
+    if (m_IsEditorStyleFreeCamEnabled) {
+        if (m_FreeCameraControlEditorStyle.m_pInterfaceRef) {
+            m_FreeCameraControlEditorStyle.m_pInterfaceRef->m_bActive = !p_Frozen;
+        }
+    }
+    else {
+        if (m_FreeCameraControl.m_pInterfaceRef) {
+            m_FreeCameraControl.m_pInterfaceRef->m_bActive = !p_Frozen;
+        }
     }
 }
 
 bool FreeCam::HasSpawnedEntities() const {
-    return m_FreeCamera && m_FreeCameraControl;
+    return m_FreeCamera && (m_FreeCameraControl || m_FreeCameraControlEditorStyle);
 }
 
 void FreeCam::CleanupSpawnedEntities() {
@@ -415,6 +462,9 @@ void FreeCam::CleanupSpawnedEntities() {
     }
 
     if (m_FreeCameraControl) {
+        m_FreeCameraControl->SetActive(false);
+    }
+    else if (m_FreeCameraControlEditorStyle) {
         m_FreeCameraControl->SetActive(false);
     }
 
@@ -432,6 +482,9 @@ void FreeCam::CleanupSpawnedEntities() {
 
     if (m_FreeCameraControl) {
         SDK()->Functions()->ZEntityManager_DeleteEntity->Call(SDK()->Globals()->EntityManager, m_FreeCameraControl.m_entityRef);
+    }
+    else if (m_FreeCameraControlEditorStyle) {
+        SDK()->Functions()->ZEntityManager_DeleteEntity->Call(SDK()->Globals()->EntityManager, m_FreeCameraControlEditorStyle.m_entityRef);
     }
 
     if (m_FreeCamera) {
@@ -467,6 +520,7 @@ void FreeCam::CleanupSpawnedEntities() {
     }
 
     m_FreeCameraControl = {};
+    m_FreeCameraControlEditorStyle = {};
     m_FreeCamera = {};
     m_BlockHumanoidPlayerMoveInput = {};
     m_UnblockHumanoidPlayerMoveInput = {};
@@ -480,7 +534,7 @@ void FreeCam::CleanupSpawnedEntities() {
 }
 
 DEFINE_PLUGIN_DETOUR(
-    FreeCam, ZString*, ZFreeCameraControlEntity_GenerateActionBindingString, ZFreeCameraControlEntity* p_Th, ZString& p_Result, int p_ControllerId
+    FreeCam, ZString*, ZFreeCameraControlEntity_GenerateActionBindingString, ZFreeCameraControlEntity* p_Th, ZString& p_Result, int32_t p_ControllerId
 ) {
     ZString* s_Res = p_Hook->CallOriginal(p_Th, p_Result, p_ControllerId);
 
@@ -749,6 +803,163 @@ DEFINE_PLUGIN_DETOUR(FreeCam, void, ZFreeCameraControlEntity_UpdateCamera, ZFree
     // SetObjectToWorldMatrixFromEditor results in stepping / snapping when looking around.
     m_FreeCamera->m_mTransform = s_Out.ToMatrix43();
     m_FreeCamera->m_bWorldTransformDirty = false;
+
+    return {HookAction::Return()};
+}
+
+DEFINE_PLUGIN_DETOUR(
+    FreeCam, ZString*, ZFreeCameraControlEditorStyleEntity_GenerateActionBindingString, ZFreeCameraControlEditorStyleEntity* p_Th, ZString& p_Result,
+    int32_t p_ControllerId
+) {
+    ZString* s_Res = p_Hook->CallOriginal(p_Th, p_Result, p_ControllerId);
+
+    p_Result.m_pChars = "FreeCamControlEditorStyle={"
+                        "MousePosX=rel(ms,x);"
+                        "MousePosY=rel(ms,y);"
+                        "MoveXPositive=| hold(kb,left) hold(kb,a);"
+                        "MoveXNegative=| hold(kb,right) hold(kb,d);"
+                        "MoveYPositive=| hold(kb,up) hold(kb,w);"
+                        "MoveYNegative=| hold(kb,down) hold(kb,s);"
+                        "MoveZPositive=| hold(kb,pgup) hold(kb,e);"
+                        "MoveZNegative=| hold(kb,pgdn) hold(kb,q);"
+                        "MoveFast=| hold(kb,lshift) hold(kb,rshift);"
+                        "Zoom=rel(ms,wheel);"
+                        "ZoomPrecision=| hold(kb,lalt) hold(kb,ralt);"
+                        "ZoomToSelection=hold(kb,z);"
+                        "OrbitCamera=| hold(kb,lalt) hold(kb,ralt);"
+                        "ActivateRotate=hold(ms,right);"
+                        "ActivateObjectHook=hold(ms,middle);"
+                        "};";
+
+    p_Result.m_nLength = static_cast<uint32_t>(std::strlen(p_Result.m_pChars)) | 0x80000000;
+
+    return {HookAction::Return(), s_Res};
+}
+
+DEFINE_PLUGIN_DETOUR(
+    FreeCam, void, ZFreeCameraControlEditorStyleEntity_HandleDrag, ZFreeCameraControlEditorStyleEntity* const th, bool bRotationIsActive,
+    bool bObjectHookIsActive, bool bIsOrbitActive
+) {
+    if (!bRotationIsActive && !bObjectHookIsActive) {
+        th->m_bDraggingIsActive = false;
+
+        return {HookAction::Return()};
+    }
+
+    if (!th->m_bDraggingIsActive) {
+        th->m_bDraggingIsActive = true;
+    }
+
+    /*
+     * The original implementation uses anaraw(ms,posx/posy) and computes
+     * dragDelta = m_vMousePos - m_vLastDragPoint.
+     *
+     * This implementation uses rel(ms,x/y), so m_vMousePos already contains
+     * per-frame mouse deltas and m_vLastDragPoint is intentionally
+     * unused.
+     */
+    const float s_DeltaX = th->m_vMousePos.x;
+    const float s_DeltaY = th->m_vMousePos.y;
+
+    if (s_DeltaX == 0.0f && s_DeltaY == 0.0f) {
+        return {HookAction::Return()};
+    }
+
+    constexpr float c_OrbitSensitivity = 0.003f;
+
+    if (bObjectHookIsActive) {
+        if (!bIsOrbitActive) {
+            SDK()->Functions()->ZCameraUtil_PanCamera->Call(
+                TEntityRef<ICameraEntity>(th->m_pControlledCameraEntity.m_entityRef),
+                TEntityRef<ZSpatialEntity>(th->m_pControlledCameraEntity.m_entityRef), {s_DeltaX, s_DeltaY, 0.f, 0.f}, th->m_vHookPoint
+            );
+
+            return {HookAction::Return()};
+        }
+
+        SDK()->Functions()->ZFreeCameraControlEditorStyleEntity_OrbitCamera->Call(
+            th, float4(s_DeltaX * c_OrbitSensitivity, s_DeltaY * c_OrbitSensitivity, 0.f, 0.f), th->m_vHookPoint
+        );
+
+        return {HookAction::Return()};
+    }
+
+    if (bIsOrbitActive) {
+        SDK()->Functions()->ZFreeCameraControlEditorStyleEntity_OrbitCamera->Call(
+            th, float4(s_DeltaX * c_OrbitSensitivity, s_DeltaY * c_OrbitSensitivity, 0.f, 0.f), th->m_vHookPoint
+        );
+
+        return {HookAction::Return()};
+    }
+
+    if (!th->m_pControlledCameraEntity) {
+        return {HookAction::Return()};
+    }
+
+    constexpr float c_MouseSensitivity = 0.16f;
+
+    const float s_YawDelta = s_DeltaX * c_MouseSensitivity;
+    const float s_PitchDelta = s_DeltaY * c_MouseSensitivity;
+
+    th->Rotate(s_YawDelta, s_PitchDelta);
+
+    return {HookAction::Return()};
+}
+
+DEFINE_PLUGIN_DETOUR(
+    FreeCam, void, ZFreeCameraControlEditorStyleEntity_MoveCameraWithKey, ZFreeCameraControlEditorStyleEntity* th, float fDeltaTime
+) {
+    if (!th->m_pControlledCameraEntity) {
+        return {HookAction::Return()};
+    }
+
+    float s_MoveX = 0.0f;
+    float s_MoveY = 0.0f;
+    float s_MoveZ = 0.0f;
+
+    if (th->m_MoveXPositive.Digital()) {
+        s_MoveX -= 1.0f;
+    }
+
+    if (th->m_MoveXNegative.Digital()) {
+        s_MoveX += 1.0f;
+    }
+
+    if (th->m_MoveYPositive.Digital()) {
+        s_MoveY += 1.0f;
+    }
+
+    if (th->m_MoveYNegative.Digital()) {
+        s_MoveY -= 1.0f;
+    }
+
+    if (th->m_MoveZPositive.Digital()) {
+        s_MoveZ += 1.0f;
+    }
+
+    if (th->m_MoveZNegative.Digital()) {
+        s_MoveZ -= 1.0f;
+    }
+
+    if (s_MoveX == 0.0f && s_MoveY == 0.0f && s_MoveZ == 0.0f) {
+        return {HookAction::Return()};
+    }
+
+    SMatrix s_CameraToWorld = th->m_pControlledCameraEntity.m_pInterfaceRef->GetObjectToWorldMatrix();
+
+    if (s_MoveY != 0.0f) {
+        th->MoveForwardBackward(s_CameraToWorld, s_MoveY > 0.0f ? fDeltaTime : -fDeltaTime);
+    }
+
+    if (s_MoveX != 0.0f) {
+        th->MoveLeftRight(s_CameraToWorld, s_MoveX > 0.0f ? fDeltaTime : -fDeltaTime);
+    }
+
+    if (s_MoveZ != 0.0f) {
+        th->MoveUpDown(s_CameraToWorld, s_MoveZ > 0.0f ? fDeltaTime : -fDeltaTime);
+    }
+
+    SDK()->Functions()->ZFreeCameraControlEditorStyleEntity_ApplyCameraMatrix->Call(th, s_CameraToWorld);
 
     return {HookAction::Return()};
 }

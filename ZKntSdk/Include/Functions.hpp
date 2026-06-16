@@ -4,6 +4,7 @@
 #include "EngineFunction.hpp"
 #include "Glacier/ZDelegate.hpp"
 #include "Glacier/EUpdateMode.hpp"
+#include "Glacier/ZMath.hpp"
 
 class ZEntityManager;
 class IEntityFactory;
@@ -20,6 +21,8 @@ template<typename T> class TEntityRef;
 class ZObjectRef;
 class ZEntityType;
 class ZInputContext;
+class ICameraEntity;
+class ZFreeCameraControlEditorStyleEntity;
 
 namespace zknt {
     class Functions {
@@ -71,5 +74,18 @@ namespace zknt {
         EngineFunction<ZString::ZImpl*(const char* buf, size_t size)>* ZStringCollection_Allocate = nullptr;
 
         EngineFunction<void(ZString::ZImpl* th)>* ZString_ZImpl_Free = nullptr;
+
+        EngineFunction<void(
+            TEntityRef<ICameraEntity> pCamera, TEntityRef<ZSpatialEntity> pCameraSpatial, const float4& vMouseDelta, const float4& vHookPoint
+        )>* ZCameraUtil_PanCamera = nullptr;
+
+        EngineFunction<void(ZFreeCameraControlEditorStyleEntity* th, float4 orbitDelta, float4 orbitCenter)>*
+            ZFreeCameraControlEditorStyleEntity_OrbitCamera = nullptr;
+
+        EngineFunction<SMatrix*(SMatrix& result, SMatrix cameraToWorld, float yawDelta, float pitchDelta, const float4& orbitCenter)>*
+            ZCameraUtil_RotateCameraToWorldMatrix = nullptr;
+
+        EngineFunction<void(ZFreeCameraControlEditorStyleEntity* th, const SMatrix& mCameraToWorld)>*
+            ZFreeCameraControlEditorStyleEntity_ApplyCameraMatrix = nullptr;
     };
 }
