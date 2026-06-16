@@ -148,4 +148,111 @@ class ZFreeCameraControlEntity : public ZEntityImpl, public IFreeCameraControl {
     inline static ZInputAction m_TemporaryCamSpeedMultiplierRightShift = ZInputAction("TemporaryCamSpeedMultiplierRightShift");
 };
 
-class ZFreeCameraControlEditorStyleEntity : public ZEntityImpl, public IFreeCameraControl {};
+class ZFreeCameraControlEditorStyleEntity : public ZEntityImpl, public IFreeCameraControl {
+  public:
+    void Rotate(float p_DeltaH, float p_DeltaV) {
+        SMatrix const s_CameraToWorld = m_pControlledCameraEntity.m_pInterfaceRef->GetObjectToWorldMatrix();
+
+        SMatrix s_Rotated;
+
+        SDK()->Functions()->ZCameraUtil_RotateCameraToWorldMatrix->Call(s_Rotated, s_CameraToWorld, p_DeltaH, p_DeltaV, m_vHookPoint);
+
+        SDK()->Functions()->ZFreeCameraControlEditorStyleEntity_ApplyCameraMatrix->Call(this, s_Rotated);
+    }
+
+    void MoveForwardBackward(SMatrix& p_CameraToWorld, float p_Delta) {
+        float s_Speed = m_fSpeed;
+
+        if (m_MoveFast.Digital()) {
+            s_Speed *= 5.0f;
+        }
+
+        const float4 s_Offset = p_CameraToWorld.ZAxis * (-s_Speed * p_Delta);
+
+        p_CameraToWorld.Trans += s_Offset;
+
+        if (!m_OrbitCamera.Digital()) {
+            m_vHookPoint += s_Offset;
+        }
+    }
+
+    void MoveLeftRight(SMatrix& p_CameraToWorld, float p_Delta) {
+        const bool s_Orbit = m_OrbitCamera.Digital();
+        const bool s_Fast = m_MoveFast.Digital();
+
+        if (s_Orbit) {
+            float s_OrbitSpeed = s_Fast ? 6.0f : 3.0f;
+
+            SDK()->Functions()->ZFreeCameraControlEditorStyleEntity_OrbitCamera->Call(
+                this, float4(-s_OrbitSpeed * p_Delta, 0.0f, 0.0f, 0.0f), m_vHookPoint
+            );
+
+            return;
+        }
+
+        float s_Speed = m_fSpeed;
+
+        if (s_Fast) {
+            s_Speed *= 5.0f;
+        }
+
+        const float4 s_Offset = p_CameraToWorld.XAxis * (s_Speed * p_Delta);
+
+        p_CameraToWorld.Trans += s_Offset;
+
+        m_vHookPoint += s_Offset;
+    }
+
+    void MoveUpDown(SMatrix& p_CameraToWorld, float p_Delta) {
+        const bool s_Orbit = m_OrbitCamera.Digital();
+        const bool s_Fast = m_MoveFast.Digital();
+
+        if (s_Orbit) {
+            float s_OrbitSpeed = s_Fast ? 6.0f : 3.0f;
+
+            SDK()->Functions()->ZFreeCameraControlEditorStyleEntity_OrbitCamera->Call(
+                this, float4(0.0f, s_OrbitSpeed * p_Delta, 0.0f, 0.0f), m_vHookPoint
+            );
+
+            return;
+        }
+
+        float s_Speed = m_fSpeed;
+
+        if (s_Fast) {
+            s_Speed *= 5.0f;
+        }
+
+        const float4 s_Offset = p_CameraToWorld.YAxis * (s_Speed * p_Delta);
+
+        p_CameraToWorld.Trans += s_Offset;
+
+        m_vHookPoint += s_Offset;
+    }
+
+    TEntityRef<ZCameraEntity> m_cameraEntity;
+    bool m_bActive;
+    TEntityRef<ZCameraEntity> m_pControlledCameraEntity;
+    bool m_bRotationWasActive;
+    bool m_bObjectHookWasActive;
+    float4 m_vMousePos;
+    float4 m_vLastDragPoint;
+    float4 m_vHookPoint;
+    bool m_bDraggingIsActive;
+    float m_fSpeed;
+    bool m_bZoomToSelectedPivotNextTime;
+    float m_fZoomToPivotDistance;
+    bool m_bPickingWasPermitted;
+    int m_nHookDebugDrawId;
+    bool m_bZoomToSelectionWasActive;
+
+    inline static ZInputAction m_MoveXPositive = ZInputAction("MoveXPositive");
+    inline static ZInputAction m_MoveXNegative = ZInputAction("MoveXNegative");
+    inline static ZInputAction m_MoveYPositive = ZInputAction("MoveYPositive");
+    inline static ZInputAction m_MoveYNegative = ZInputAction("MoveYNegative");
+    inline static ZInputAction m_MoveZPositive = ZInputAction("MoveZPositive");
+    inline static ZInputAction m_MoveZNegative = ZInputAction("MoveZNegative");
+
+    inline static ZInputAction m_MoveFast = ZInputAction("MoveFast");
+    inline static ZInputAction m_OrbitCamera = ZInputAction("OrbitCamera");
+};
