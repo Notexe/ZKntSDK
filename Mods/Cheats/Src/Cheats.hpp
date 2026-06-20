@@ -3,7 +3,6 @@
 #include <IPluginInterface.hpp>
 #include <Glacier/ZCamera.hpp>
 
-template<typename T> class ITEntityRefValue {};
 class IBoolValue {};
 class ZCLTeleportHumanoidEntity : public ZEntityImpl {};
 class ZCLEnableDisableHumanoidCollision : public ZEntityImpl {};
