@@ -606,6 +606,8 @@ void FreeCam::CleanupSpawnedEntities() {
     m_BlockHumanoidPlayerCloseCombatInput = {};
     m_UnblockHumanoidPlayerCloseCombatInput = {};
     m_GetLocalPlayer = {};
+    m_TeleportHumanoidEntity = {};
+    m_GetLocalPlayerHumanoidCharacter = {};
     m_PreviousCameraSource = {};
     m_Initialized = false;
 }
