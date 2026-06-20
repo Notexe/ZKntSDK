@@ -25,7 +25,7 @@ FreeCam::FreeCam()
     , m_ToggleFreeCamAction("ToggleFreeCamera")
     , m_ActivatePlayerInputAction("ActivatePlayerInput")
     , m_TogglePauseGameAction("TogglePauseGame")
-    , m_TeleportPlayerAction("Teleport")
+    , m_TeleportPlayerAction("TeleportPlayer")
     , m_MenuVisible(false)
     , m_ControlsVisible(false) {
     m_PcControls = {
@@ -107,7 +107,7 @@ void FreeCam::OnEngineInitialized() {
                              "ToggleFreeCamera=tap(kb,k);"
                              "TogglePauseGame=tap(kb,f8);"
                              "ActivatePlayerInput=tap(kb,f3);"
-                             "Teleport=& hold(kb,lctrl) tap(kb,f6);};";
+                             "TeleportPlayer=& hold(kb,lctrl) tap(kb,f6);};";
 
     ZInputContext* s_InputContext = SDK()->Functions()->GetGlobalInputContext->Call();
 
