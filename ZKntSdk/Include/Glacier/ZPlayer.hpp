@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 #include "ZEntity.hpp"
 #include "ZHumanoid.hpp"
