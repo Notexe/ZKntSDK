@@ -50,7 +50,8 @@ struct SInterfaceData {
 
 struct SExposedEntityData {
     ZString m_sExposedEntityName;     // 0x0
-    bool m_bIsArray;                  // 0x10
+    uint32_t m_nNameHash;             // 0x10
+    bool m_bIsArray;                  // 0x14
     TArray<int64_t> m_aEntityOffsets; // 0x18
 };
 
