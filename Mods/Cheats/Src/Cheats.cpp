@@ -121,84 +121,56 @@ void Cheats::OnDrawUI(bool p_HasFocus) {
             LoadPlayerOutfitSets();
         }
 
-        static std::string s_SelectedCategory;
-        static std::string s_SelectedOutfit;
-        static std::string s_SelectedOutfitVariation;
+        static char s_Category[1024]{};
+        static char s_Outfit[1024]{};
+        static char s_OutfitVariation[1024]{};
 
-        if (s_SelectedCategory.empty() && !m_OutfitCategoryToOutfits.empty()) {
-            s_SelectedCategory = m_OutfitCategoryToOutfits.begin()->first;
-        }
+        static const std::set<std::string>* s_CategoryOutfits = nullptr;
+        static const OutfitInfo* s_OutfitInfo = nullptr;
 
         ImGui::BeginDisabled(!m_KntLoadoutCollectionEntity || m_OutfitCategories.empty());
 
-        if (ImGui::BeginCombo("Outfit category", s_SelectedCategory.c_str())) {
-            for (const auto& [s_Category, s_Outfits] : m_OutfitCategoryToOutfits) {
-                bool s_IsSelected = s_Category == s_SelectedCategory;
+        Util::ImGuiUtils::InputWithAutocomplete(
+            "##OutfitCategory", s_Category, sizeof(s_Category), m_OutfitCategoryToOutfits,
+            [](const auto& p_Pair) -> const std::string& { return p_Pair.first; },
+            [](const auto& p_Pair) -> const std::string& { return p_Pair.first; },
+            [&](const std::string&, const std::string& p_Name, const auto& p_Pair) {
+                s_CategoryOutfits = &p_Pair.second;
+                s_OutfitInfo = nullptr;
 
-                if (ImGui::Selectable(s_Category.c_str(), s_IsSelected)) {
-                    s_SelectedCategory = s_Category;
-                    s_SelectedOutfit.clear();
-                    s_SelectedOutfitVariation.clear();
-                }
-
-                if (s_IsSelected) {
-                    ImGui::SetItemDefaultFocus();
-                }
+                s_Outfit[0] = '\0';
+                s_OutfitVariation[0] = '\0';
             }
-
-            ImGui::EndCombo();
-        }
+        );
 
         ImGui::EndDisabled();
 
         ImGui::BeginDisabled(!m_KntLoadoutCollectionEntity || m_OutfitCategories.empty());
 
-        if (ImGui::BeginCombo("Outfit", s_SelectedOutfit.c_str())) {
-            auto s_CategoryOutfitsIt = m_OutfitCategoryToOutfits.find(s_SelectedCategory);
-
-            if (s_CategoryOutfitsIt != m_OutfitCategoryToOutfits.end()) {
-                for (const auto& s_Outfit : s_CategoryOutfitsIt->second) {
-                    bool s_IsSelected = s_Outfit == s_SelectedOutfit;
-
-                    if (ImGui::Selectable(s_Outfit.c_str(), s_IsSelected)) {
-                        s_SelectedOutfit = s_Outfit;
-                        s_SelectedOutfitVariation.clear();
-                    }
-
-                    if (s_IsSelected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
+        Util::ImGuiUtils::InputWithAutocomplete(
+            "##Outfit", s_Outfit, sizeof(s_Outfit), s_CategoryOutfits ? *s_CategoryOutfits : std::set<std::string>{},
+            [](const auto& p_Outfit) -> const std::string { return p_Outfit; }, [](const auto& p_Outfit) -> const std::string { return p_Outfit; },
+            [&](const std::string&, const std::string& p_Name, const auto&) {
+                if (const auto it = m_OutfitNameToOutfitInfo.find(p_Name); it != m_OutfitNameToOutfitInfo.end()) {
+                    s_OutfitInfo = &it->second;
+                    s_OutfitVariation[0] = '\0';
                 }
             }
-
-            ImGui::EndCombo();
-        }
+        );
 
         ImGui::EndDisabled();
 
         ImGui::BeginDisabled(!m_KntLoadoutCollectionEntity || m_OutfitCategories.empty());
 
-        if (ImGui::BeginCombo("Outfit variations", s_SelectedOutfitVariation.c_str())) {
-            auto s_OutfitInfoIt = m_OutfitNameToOutfitInfo.find(s_SelectedOutfit);
-
-            if (s_OutfitInfoIt != m_OutfitNameToOutfitInfo.end()) {
-                for (const auto& s_Pair : s_OutfitInfoIt->second.m_Variations) {
-                    bool s_IsSelected = s_Pair.first == s_SelectedOutfitVariation;
-
-                    if (ImGui::Selectable(s_Pair.first.c_str(), s_IsSelected)) {
-                        s_SelectedOutfitVariation = s_Pair.first;
-
-                        SetPlayerOutfit(s_OutfitInfoIt->second.m_OutfitSetRuntimeResourceID, s_Pair.second);
-                    }
-
-                    if (s_IsSelected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
+        Util::ImGuiUtils::InputWithAutocomplete(
+            "##OutfitVariation", s_OutfitVariation, sizeof(s_OutfitVariation),
+            s_OutfitInfo ? s_OutfitInfo->m_Variations : std::vector<std::pair<std::string, size_t>>{},
+            [](const auto& p_Pair) -> const std::string& { return p_Pair.first; },
+            [](const auto& p_Pair) -> const std::string& { return p_Pair.first; },
+            [&](const std::string&, const std::string&, const auto& p_Pair) {
+                SetPlayerOutfit(s_OutfitInfo->m_OutfitSetRuntimeResourceID, p_Pair.second);
             }
-
-            ImGui::EndCombo();
-        }
+        );
 
         ImGui::EndDisabled();
 
@@ -206,33 +178,33 @@ void Cheats::OnDrawUI(bool p_HasFocus) {
 
         ImGui::Text("All outfits");
 
-        static char s_OutfitName[2048]{""};
-        static char s_OutfitVariationName[2048]{""};
-        static const OutfitInfo* s_OutfitInfo = nullptr;
+        static char s_Outfit2[1024]{""};
+        static char s_OutfitVariation2[1024]{""};
+        static const OutfitInfo* s_OutfitInfo2 = nullptr;
 
         ImGui::BeginDisabled(m_AllOutfitSets.empty());
 
         Util::ImGuiUtils::InputWithAutocomplete(
-            "##OutfitsPopup", s_OutfitName, sizeof(s_OutfitName), m_AllOutfitSets, [](auto& p_Pair) -> const std::string& { return p_Pair.first; },
+            "##OutfitsPopup", s_Outfit2, sizeof(s_Outfit2), m_AllOutfitSets, [](auto& p_Pair) -> const std::string& { return p_Pair.first; },
             [](auto& p_Pair) -> const std::string& { return p_Pair.first; },
             [&](const std::string&, const std::string& p_Name, const auto& p_Pair) {
                 if (const auto it = m_AllOutfitSets.find(p_Name); it != m_AllOutfitSets.end()) {
-                    s_OutfitInfo = &it->second;
-                    s_OutfitVariationName[0] = '\0';
+                    s_OutfitInfo2 = &it->second;
+                    s_OutfitVariation2[0] = '\0';
                 }
             }
         );
 
         ImGui::EndDisabled();
 
-        ImGui::BeginDisabled(m_AllOutfitSets.empty() || !s_OutfitInfo);
+        ImGui::BeginDisabled(m_AllOutfitSets.empty() || !s_OutfitInfo2);
 
         Util::ImGuiUtils::InputWithAutocomplete(
-            "##OutfitVariationsPopup", s_OutfitVariationName, sizeof(s_OutfitVariationName),
-            s_OutfitInfo ? s_OutfitInfo->m_Variations : std::vector<std::pair<std::string, size_t>>{},
+            "##OutfitVariationsPopup", s_OutfitVariation2, sizeof(s_OutfitVariation2),
+            s_OutfitInfo2 ? s_OutfitInfo2->m_Variations : std::vector<std::pair<std::string, size_t>>{},
             [](auto& p_Pair) -> std::string { return p_Pair.first; }, [](auto& p_Pair) -> std::string { return p_Pair.first; },
             [&](const std::string&, const std::string& p_Name, const std::pair<std::string, size_t>& p_Value) {
-                SetPlayerOutfit(s_OutfitInfo->m_OutfitSetRuntimeResourceID, p_Value.second);
+                SetPlayerOutfit(s_OutfitInfo2->m_OutfitSetRuntimeResourceID, p_Value.second);
             }
         );
 
