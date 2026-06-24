@@ -185,7 +185,7 @@ void Cheats::OnDrawUI(bool p_HasFocus) {
         ImGui::BeginDisabled(m_AllOutfitSets.empty());
 
         Util::ImGuiUtils::InputWithAutocomplete(
-            "##OutfitsPopup", s_Outfit2, sizeof(s_Outfit2), m_AllOutfitSets, [](auto& p_Pair) -> const std::string& { return p_Pair.first; },
+            "Outfit set##OutfitSets", s_Outfit2, sizeof(s_Outfit2), m_AllOutfitSets, [](auto& p_Pair) -> const std::string& { return p_Pair.first; },
             [](auto& p_Pair) -> const std::string& { return p_Pair.first; },
             [&](const std::string&, const std::string& p_Name, const auto& p_Pair) {
                 if (const auto it = m_AllOutfitSets.find(p_Name); it != m_AllOutfitSets.end()) {
@@ -200,7 +200,7 @@ void Cheats::OnDrawUI(bool p_HasFocus) {
         ImGui::BeginDisabled(m_AllOutfitSets.empty() || !s_OutfitInfo2);
 
         Util::ImGuiUtils::InputWithAutocomplete(
-            "##OutfitVariationsPopup", s_OutfitVariation2, sizeof(s_OutfitVariation2),
+            "Outfit variation##OutfitVariations", s_OutfitVariation2, sizeof(s_OutfitVariation2),
             s_OutfitInfo2 ? s_OutfitInfo2->m_Variations : std::vector<std::pair<std::string, size_t>>{},
             [](auto& p_Pair) -> std::string { return p_Pair.first; }, [](auto& p_Pair) -> std::string { return p_Pair.first; },
             [&](const std::string&, const std::string& p_Name, const std::pair<std::string, size_t>& p_Value) {
