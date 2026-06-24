@@ -2,12 +2,24 @@
 
 #include "ZEntity.hpp"
 
+class IValueChanged : public IComponentInterface {};
+
+class IReplicatedCLValue : public IComponentInterface {};
+
+class ZCLValue : public ZEntityImpl, public IValueChanged {
+  public:
+};
+
+class ZCLSimpleValue : public ZCLValue, public IReplicatedCLValue {
+  public:
+};
+
 class IBoolValue : public IComponentInterface {
   public:
     virtual bool GetValue() = 0;
 };
 
-class ZCLValueBoolEntity : public ZEntityImpl {};
+class ZCLValueBoolEntity : public ZCLSimpleValue, public IBoolValue {};
 
 class IFloatValue : public IComponentInterface {
   public:
