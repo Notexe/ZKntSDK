@@ -57,6 +57,14 @@ void Cheats::CleanupSpawnedEntities() {
     s_Delete(&m_GadgetSpawnerItemEntry);
     s_Delete(&m_GadgetAttacher);
     s_Delete(&m_GadgetSlotAssigner);
+
+    for (auto& s_AmmunitionGetter : m_AmmunitionGetters) {
+        s_Delete(&s_AmmunitionGetter);
+    }
+
+    for (auto& s_AmmunitionSetter : m_AmmunitionSetters) {
+        s_Delete(&s_AmmunitionSetter);
+    }
 }
 
 void Cheats::Init() {
@@ -336,6 +344,15 @@ void Cheats::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
         m_AssignGadgetToSlot = false;
     }
 
+    if (m_InfiniteAmmo) {
+        for (size_t i = 0; i < m_AmmunitionGetters.size(); ++i) {
+            if (m_AmmunitionGetters[i].m_pInterfaceRef->GetValue() == 0) {
+                m_AmmunitionSetters[i].m_entityRef.SetProperty<uint32>("m_ammunitionToGive", 1);
+                m_AmmunitionSetters[i].m_entityRef.SignalInputPin("Do");
+            }
+        }
+    }
+
     if (!m_NoclipEnabled) {
         return;
     }
@@ -407,10 +424,26 @@ bool Cheats::EnsureEntitiesSpawned() {
     m_GadgetAttacher = TEntityRef<ZCLAttachItemToHumanoid>::SpawnEntity(ResId<"[modules:/zclattachitemtohumanoid.class].entitytype">);
     m_GadgetSlotAssigner = TEntityRef<ZCLAssignGadgetToSlot>::SpawnEntity(ResId<"[modules:/zclassigngadgettoslot.class].entitytype">);
 
+    for (size_t i = 0; i < m_AmmunitionGetters.size(); ++i) {
+        m_AmmunitionGetters[i] =
+            TEntityRef<ZCLGetPlayerInventoryAmmunition>::SpawnEntity(ResId<"[modules:/zclgetplayerinventoryammunition.class].entitytype">);
+    }
+
+    for (size_t i = 0; i < m_AmmunitionSetters.size(); ++i) {
+        m_AmmunitionSetters[i] =
+            TEntityRef<ZCLGiveHumanoidPlayerAmmunition>::SpawnEntity(ResId<"[modules:/zclgivehumanoidplayerammunition.class].entitytype">);
+    }
+
+    const bool s_AreAmmunitionGettersSpawned =
+        std::ranges::all_of(m_AmmunitionGetters, [](const auto& p_AmmunitionGetter) { return static_cast<bool>(p_AmmunitionGetter); });
+    const bool s_AreAmmunitionSettersSpawned =
+        std::ranges::all_of(m_AmmunitionSetters, [](const auto& p_AmmunitionSetter) { return static_cast<bool>(p_AmmunitionSetter); });
+
     if (!m_Teleporter || !m_TeleportTarget || !m_LocalPlayerHumanoidGetter || !m_CollisionModifier || !m_ImmuneModifier || !m_UnkillableModifier
         || !m_InfiniteAmmoModifier || !m_InvisibleModifier || !m_LocalPlayerIDGetter || !m_SetHumanoidOutfit || !m_ImmuneBoolValue
         || !m_UnkillableBoolValue || !m_InvisibleBoolValue || !m_CurrentElectricityGetter || !m_CurrentChemicalGetter || !m_MaximumElectricityGetter
-        || !m_MaximumChemicalGetter || !m_ElectricityGiver || !m_ChemicalGiver || !s_ElectricityAmountFloatValue || !s_ChemicalAmountFloatValue) {
+        || !m_MaximumChemicalGetter || !m_ElectricityGiver || !m_ChemicalGiver || !s_ElectricityAmountFloatValue || !s_ChemicalAmountFloatValue
+        || !s_AreAmmunitionGettersSpawned || !s_AreAmmunitionSettersSpawned) {
         Logger::Error(
             "Failed to spawn some cheat entities. Teleporter: {}, TeleportTarget: {}, LocalPlayerHumanoidGetter: {}, CollisionModifier: {}, "
             "ImmuneModifier: {}, UnkillableModifier: {}, InfiniteAmmoModifier: {}, InvisibleModifier: {}, LocalPlayerIDGetter: {}, "
@@ -426,7 +459,7 @@ bool Cheats::EnsureEntitiesSpawned() {
             static_cast<bool>(m_MaximumElectricityGetter), static_cast<bool>(m_MaximumChemicalGetter), static_cast<bool>(m_ElectricityGiver),
             static_cast<bool>(m_ChemicalGiver), static_cast<bool>(s_ElectricityAmountFloatValue), static_cast<bool>(s_ChemicalAmountFloatValue),
             static_cast<bool>(m_GadgetSpawner), static_cast<bool>(m_GadgetSpawnerItemEntry), static_cast<bool>(m_GadgetAttacher),
-            static_cast<bool>(m_GadgetSlotAssigner)
+            static_cast<bool>(m_GadgetSlotAssigner), s_AreAmmunitionGettersSpawned, s_AreAmmunitionSettersSpawned
         );
         CleanupSpawnedEntities();
         return false;
@@ -463,6 +496,10 @@ bool Cheats::EnsureEntitiesSpawned() {
     m_CurrentChemicalGetter.m_entityRef.SetProperty("m_playerID", s_PlayerIDRef);
     m_ElectricityGiver.m_entityRef.SetProperty("m_playerID", s_PlayerIDRef);
     m_ChemicalGiver.m_entityRef.SetProperty("m_playerID", s_PlayerIDRef);
+
+    for (size_t i = 0; i < m_AmmunitionSetters.size(); ++i) {
+        m_AmmunitionSetters[i].m_entityRef.SetProperty("m_playerID", s_PlayerIDRef);
+    }
 
     // Wire the immune/unkillable/invisible modifiers to their bool-value sources.
     const auto s_ImmuneBoolRef = TInterfaceRef<IBoolValue>::FromEntityRef(m_ImmuneBoolValue.m_entityRef);
@@ -509,6 +546,14 @@ bool Cheats::EnsureEntitiesSpawned() {
 
     m_ElectricityGiver.m_entityRef.SetProperty("m_amount", s_ElectricityAmountFloatRef);
     m_ChemicalGiver.m_entityRef.SetProperty("m_amount", s_ChemicalAmountFloatRef);
+
+    for (size_t i = 0; i < m_AmmunitionGetters.size(); ++i) {
+        m_AmmunitionGetters[i].m_entityRef.SetProperty("m_firearmClass", static_cast<EFirearmClass>(i));
+    }
+
+    for (size_t i = 0; i < m_AmmunitionSetters.size(); ++i) {
+        m_AmmunitionSetters[i].m_entityRef.SetProperty("m_firearmClass", static_cast<EFirearmClass>(i));
+    }
 
     // Make sure the freshly spawned entities pick up the current toggle states.
     m_StateDirty = true;

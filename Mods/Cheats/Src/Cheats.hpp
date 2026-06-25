@@ -8,6 +8,7 @@
 #include <Glacier/ZPlayer.hpp>
 #include <Glacier/ZSpawner.hpp>
 #include <Glacier/ZGadget.hpp>
+#include <Glacier/ZFirearm.hpp>
 
 class ZCLSetHumanoidOutfitEntity;
 class ZCLSetPlayerInvisibleToNpcs;
@@ -15,6 +16,7 @@ class ZCLGiveResourceToPlayer;
 class ZCLAttachItemToHumanoid;
 class ZCLAssignGadgetToSlot;
 class ZItemCharacterEntityBase;
+class ZCLGiveHumanoidPlayerAmmunition;
 
 class Cheats : public zknt::IPluginInterface {
   public:
@@ -87,6 +89,8 @@ class Cheats : public zknt::IPluginInterface {
     TEntityRef<ZDynamicGameplaySpawnerItemEntryEntity> m_GadgetSpawnerItemEntry;
     TEntityRef<ZCLAttachItemToHumanoid> m_GadgetAttacher;
     TEntityRef<ZCLAssignGadgetToSlot> m_GadgetSlotAssigner;
+    std::array<TEntityRef<ZCLGetPlayerInventoryAmmunition>, 8> m_AmmunitionGetters;
+    std::array<TEntityRef<ZCLGiveHumanoidPlayerAmmunition>, 8> m_AmmunitionSetters;
 
     bool m_ShowPanel = false;
     bool m_DisableCollision = false;

@@ -46,3 +46,5 @@ class ZCLGetCurrentPlayerResource : public ZEntityImpl, public IFloatValue {
     TResourcePtr<ZEntityRef> m_resourceDefinition; // 0x20
     TInterfaceRef<IIntValue> m_playerID;           // 0x28
 };
+
+class ZCLGetPlayerInventoryAmmunition : public ZCLValueIntEntity {};
