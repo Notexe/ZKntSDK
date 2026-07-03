@@ -6,6 +6,12 @@
 
 #include "imgui.h"
 
+template<typename T> class TResourcePtr;
+class ZTemplateEntityBlueprintFactory;
+class ZTemplateEntityFactory;
+class ZCppEntityBlueprintFactory;
+class ZCppEntityFactory;
+
 struct ImGuiContext;
 
 class ZString;
@@ -20,6 +26,11 @@ namespace zknt {
         virtual ~IModSDK() = default;
 
         virtual ImGuiContext* GetImGuiContext() = 0;
+        virtual ImFont* GetImGuiLightFont() = 0;
+        virtual ImFont* GetImGuiRegularFont() = 0;
+        virtual ImFont* GetImGuiMediumFont() = 0;
+        virtual ImFont* GetImGuiBoldFont() = 0;
+        virtual ImFont* GetImGuiBlackFont() = 0;
 
         virtual zknt::Hooks* Hooks() = 0;
         virtual zknt::Functions* Functions() = 0;
@@ -61,14 +72,24 @@ namespace zknt {
         ) = 0;
 
         virtual void AllocateZString(ZString* p_Target, const char* p_Str, uint32_t p_Size) = 0;
-
         virtual void FreeZString(ZString* p_Target) = 0;
 
-        virtual ImFont* GetImGuiLightFont() = 0;
-        virtual ImFont* GetImGuiRegularFont() = 0;
-        virtual ImFont* GetImGuiMediumFont() = 0;
-        virtual ImFont* GetImGuiBoldFont() = 0;
-        virtual ImFont* GetImGuiBlackFont() = 0;
+        /**
+         * Load C++ entity resources from JSON. This makes them available
+         * to the engine for spawning.
+         *
+         * @param p_BlueprintJson The C++ entity blueprint JSON string.
+         * @param p_BlueprintMetaJson The C++ entity blueprint metadata JSON string.
+         * @param p_EntityJson The C++ entity JSON string.
+         * @param p_EntityMetaJson The C++ entity metadata JSON string.
+         * @param p_BlueprintFactoryOut The resulting C++ entity blueprint factory resource.
+         * @param p_TemplateFactoryOut The resulting C++ entity factory resource.
+         * @return True if the resources were loaded successfully, false otherwise.
+         */
+        virtual bool LoadCppEntity(
+            const ZString& p_BlueprintJson, const ZString& p_BlueprintMetaJson, const ZString& p_EntityJson, const ZString& p_EntityMetaJson,
+            TResourcePtr<ZCppEntityBlueprintFactory>& p_BlueprintFactoryOut, TResourcePtr<ZCppEntityFactory>& p_TemplateFactoryOut
+        ) = 0;
     };
 }
 

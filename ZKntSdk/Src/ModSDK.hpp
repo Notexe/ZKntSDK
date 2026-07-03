@@ -12,6 +12,10 @@
 #include <mutex>
 #include <unordered_map>
 
+class ZResourcePending;
+
+struct ResourceMem;
+
 namespace zknt {
     class ModLoader;
     class IPluginInterface;
@@ -57,6 +61,11 @@ namespace zknt {
         ::zknt::Hooks* Hooks() override;
         ::zknt::Functions* Functions() override;
         ::zknt::Globals* Globals() override;
+        ImFont* GetImGuiLightFont() override;
+        ImFont* GetImGuiRegularFont() override;
+        ImFont* GetImGuiMediumFont() override;
+        ImFont* GetImGuiBoldFont() override;
+        ImFont* GetImGuiBlackFont() override;
         void Log(spdlog::level::level_enum p_Level, std::string_view p_Msg) override;
         bool PatchCode(const char* p_Pattern, const char* p_Mask, void* p_NewCode, size_t p_CodeSize, ptrdiff_t p_Offsp_TargetOffsetet) override;
         bool PatchCodeStoreOriginal(
@@ -64,11 +73,10 @@ namespace zknt {
         ) override;
         void AllocateZString(ZString* p_Target, const char* p_Str, uint32_t p_Size) override;
         void FreeZString(ZString* p_Target) override;
-        ImFont* GetImGuiLightFont() override;
-        ImFont* GetImGuiRegularFont() override;
-        ImFont* GetImGuiMediumFont() override;
-        ImFont* GetImGuiBoldFont() override;
-        ImFont* GetImGuiBlackFont() override;
+        bool LoadCppEntity(
+            const ZString& p_BlueprintJson, const ZString& p_BlueprintMetaJson, const ZString& p_EntityJson, const ZString& p_EntityMetaJson,
+            TResourcePtr<ZCppEntityBlueprintFactory>& p_BlueprintFactoryOut, TResourcePtr<ZCppEntityFactory>& p_TemplateFactoryOut
+        ) override;
 
         // SDK-internal methods.
         IRenderer* GetRenderer() const;
@@ -93,6 +101,10 @@ namespace zknt {
 
       private:
         void HandleEngineInitialized(bool p_SyncHostState);
+
+      private:
+        static std::tuple<ZResourceIndex, ZRuntimeResourceID>
+        LoadResourceFromBIN1(ResourceMem* p_ResourceMem, std::string_view p_MetaJson, std::function<void(ZResourcePending*)> p_Install);
 
       private:
         // Detours

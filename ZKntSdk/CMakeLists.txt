@@ -52,6 +52,8 @@ target_link_libraries(ZKntSdk PRIVATE
         d3d12
         dxgi
         d3dcompiler
+        simdjson::simdjson
+        ResourceLib_KNT
 )
 
 # Header-only interface exposed to mods.

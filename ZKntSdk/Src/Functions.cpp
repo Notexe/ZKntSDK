@@ -129,6 +129,66 @@ zknt::Functions::Functions() {
         "\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x00\x8B\xF9", "xxxxxxxxx?xx", ZConfigCommand_GetConfigCommand,
         ZConfigCommand * (uint32_t commandNameHash)
     );
+
+    PATTERN_FUNCTION(
+        "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x48\x89\x7C\x24\x20\x4C\x89\x44\x24\x18\x55\x41\x54\x41\x55\x41\x56\x41\x57\x48\x81\xEC",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", ZResourceContainer_AddResourceInternal,
+        ZResourceIndex * (ZResourceContainer * th, ZResourceIndex & result, const ZRuntimeResourceID rid)
+    );
+
+    PATTERN_FUNCTION(
+        "\x48\x89\x5C\x24\x08\x48\x89\x54\x24\x10\x57\x48\x83\xEC\x00\x4C\x8B\x51\x60", "xxxxxxxxxxxxxx?xxxx",
+        ZResourceContainer_AddResourceReferenceInternal, void(ZResourceContainer * th, ZRuntimeResourceID rid, SResourceReferenceFlags flags)
+    );
+
+    PATTERN_FUNCTION(
+        "\x40\x57\x48\x83\xEC\x00\x48\x8B\x05\x00\x00\x00\x00\x48\x89\x5C\x24\x58", "xxxxx?xxx????xxxxx",
+        ZResourceContainer_AcquireResourceReferences, void(ZResourceContainer * th, ZResourceIndex index)
+    );
+
+    PATTERN_FUNCTION(
+        "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x00\x33\xED\x48\x8D\x05\x00\x00\x00\x00\x89\x69\x08",
+        "xxxxxxxxxxxxxxxxxxx?xxxxx????xxx", ZResourceReader_ZResourceReader,
+        void(ZResourceReader * th, const ZResourceIndex& index, ZResourceDataPtr* pData, uint32_t dataSize)
+    );
+
+    PATTERN_FUNCTION(
+        "\x40\x53\x48\x83\xEC\x00\x48\x89\x6C\x24\x30\x48\x8D\x05\x00\x00\x00\x00\x48\x89\x74\x24\x38\x48\x8B\xD9\x48\x89\x01\x8B\xF2\x48\x83\x79"
+        "\x50",
+        "xxxxx?xxxxxxxx????xxxxxxxxxxxxxxxxx", ZResourceReader_Dtor, void(ZResourceReader * th)
+    );
+
+    PATTERN_VTABLE_FUNCTION(
+        "\x48\x8D\x05\x00\x00\x00\x00\x41\xB8\x00\x00\x00\x00\x48\x89\x05\x00\x00\x00\x00\x48\x8D\x3D\x00\x00\x00\x00\x48\x8B\x05\x00\x00\x00\x00\x48"
+        "\x8B\xD7\x48\x8D\x0D\x00\x00\x00\x00\xFF\x90\xA0\x00\x00\x00\x48\x8B\x0D",
+        "xxx????xx????xxx????xxx????xxx????xxxxxx????xxxxxxxxx", 7, ZTemplateInstaller_Install,
+        bool(ZTemplateInstaller * th, ZResourcePending * ResourcePending)
+    );
+
+    PATTERN_VTABLE_FUNCTION(
+        "\x48\x8D\x05\x00\x00\x00\x00\x41\xB8\x00\x00\x00\x00\x48\x89\x05\x00\x00\x00\x00\x48\x8D\x3D\x00\x00\x00\x00\x48\x8B\x05\x00\x00\x00\x00\x48"
+        "\x8D\x0D\x00\x00\x00\x00\x48\x8B\xD7\xFF\x90\xA0\x00\x00\x00\x48\x8B\x4B\x58\x48\x8D\x54\x24\x70\x48\x89\x7C\x24\x70\xE8\x00\x00\x00\x00\x48"
+        "\x8D\x05\x00\x00\x00\x00\x41\xB8\x00\x00\x00\x00\x48\x89\x05\x00\x00\x00\x00\x48\x8D\x3D\x00\x00\x00\x00\x48\x8B\x05\x00\x00\x00\x00\x48\x8D"
+        "\x0D\x00\x00\x00\x00\x48\x8B\xD7\xFF\x90\xA0\x00\x00\x00\x48\x8B\x4B\x58\x48\x8D\x54\x24\x70\x48\x89\x7C\x24\x70\xE8\x00\x00\x00\x00\x48\x8D"
+        "\x05\x00\x00\x00\x00\x48\x89\x35",
+        "xxx????xx????xxx????xxx????xxx????xxx????xxxxxxxxxxxxxxxxxxxxxxxx????xxx????xx????xxx????xxx????xxx????xxx????xxxxxxxxxxxxxxxxxxxxxxxx????"
+        "xxx????xxx",
+        7, ZTemplateBlueprintInstaller_Install, bool(ZTemplateBlueprintInstaller * th, ZResourcePending * ResourcePending)
+    );
+
+    PATTERN_VTABLE_FUNCTION(
+        "\x48\x8D\x05\x00\x00\x00\x00\x41\xB8\x00\x00\x00\x00\x48\x89\x05\x00\x00\x00\x00\x48\x8D\x3D\x00\x00\x00\x00\x48\x8B\x05\x00\x00\x00\x00\x48"
+        "\x8D\x0D\x00\x00\x00\x00\x48\x8B\xD7\xFF\x90\xA0\x00\x00\x00\x48\x8B\x4B\x58\x48\x8D\x54\x24\x70",
+        "xxx????xx????xxx????xxx????xxx????xxx????xxxxxxxxxxxxxxxxxx", 7, ZCppEntityTypeInstaller_Install,
+        bool(ZCppEntityTypeInstaller * th, ZResourcePending * ResourcePending)
+    );
+
+    PATTERN_VTABLE_FUNCTION(
+        "\x48\x8D\x05\x00\x00\x00\x00\x41\xB8\x00\x00\x00\x00\x48\x89\x05\x00\x00\x00\x00\x48\x8D\x3D\x00\x00\x00\x00\x48\x8B\x05\x00\x00\x00\x00\x48"
+        "\x8B\xD7",
+        "xxx????xx????xxx????xxx????xxx????xxx", 7, ZCppEntityBlueprintInstaller_Install,
+        bool(ZCppEntityBlueprintInstaller * th, ZResourcePending * ResourcePending)
+    );
 }
 
 zknt::Functions::~Functions() {
@@ -155,4 +215,13 @@ zknt::Functions::~Functions() {
     delete ZFreeCameraControlEditorStyleEntity_ApplyCameraMatrix;
     delete ZEntityImpl_EnsureUniqueType;
     delete ZResourceManager_UninstallResource;
+    delete ZConfigCommand_ExecuteCommand;
+    delete ZConfigCommand_GetConfigCommand;
+    delete ZResourceContainer_AddResourceInternal;
+    delete ZResourceContainer_AddResourceReferenceInternal;
+    delete ZResourceContainer_AcquireResourceReferences;
+    delete ZTemplateInstaller_Install;
+    delete ZTemplateBlueprintInstaller_Install;
+    delete ZCppEntityTypeInstaller_Install;
+    delete ZCppEntityBlueprintInstaller_Install;
 }

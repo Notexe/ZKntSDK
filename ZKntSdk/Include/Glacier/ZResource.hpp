@@ -5,6 +5,10 @@
 #include "TArray.hpp"
 #include "THashMap.hpp"
 #include "THashSet.hpp"
+#include "ZSharedPointerTarget.hpp"
+#include "TSharedPointer.hpp"
+#include "TMap.hpp"
+
 #include <Globals.hpp>
 #include <IModSDK.hpp>
 #include <Functions.hpp>
@@ -23,6 +27,18 @@ enum EResourceStatus {
     RESOURCE_STATUS_INSTALLING = 2,
     RESOURCE_STATUS_FAILED = 3,
     RESOURCE_STATUS_VALID = 4,
+};
+
+struct SResourceReferenceFlags {
+    union {
+        struct {
+            uint8_t languageCode : 5;
+            uint8_t acquired : 1;
+            int8_t referenceType : 2;
+        };
+
+        uint8_t flags;
+    };
 };
 
 class ZResourceContainer {
@@ -160,6 +176,8 @@ template<typename T> class TResourcePtr : public ZResourcePtr {
     }
 };
 
+class IResourceInstaller;
+
 class ZResourceManager : public IComponentInterface {
   public:
     virtual ~ZResourceManager() {}
@@ -168,4 +186,105 @@ class ZResourceManager : public IComponentInterface {
     virtual void ZResourceManager_unk7() = 0;
     virtual ZResourcePtr* GetResourcePtr(ZResourcePtr& result, const ZRuntimeResourceID& ridResource, int nPriority) = 0;
     virtual ZResourcePtr* LoadResource(ZResourcePtr& result, const ZRuntimeResourceID& ridResource) = 0;
+    virtual void ZResourceManager_unk10() = 0;
+    virtual void ZResourceManager_unk11() = 0;
+    virtual void ZResourceManager_unk12() = 0;
+    virtual void ZResourceManager_unk13() = 0;
+    virtual void ZResourceManager_unk14() = 0;
+    virtual void ZResourceManager_unk15() = 0;
+    virtual void ZResourceManager_unk16() = 0;
+    virtual void ZResourceManager_unk17() = 0;
+    virtual void ZResourceManager_unk18() = 0;
+    virtual void ZResourceManager_unk19() = 0;
+    virtual void ZResourceManager_unk20() = 0;
+    virtual void ZResourceManager_unk21() = 0;
+    virtual void ZResourceManager_unk22() = 0;
+    virtual void ZResourceManager_unk23() = 0;
+    virtual void Update(bool bSendStatusChangedNotifications) = 0;
+    virtual void ZResourceManager_unk25() = 0;
+    virtual void ZResourceManager_unk26() = 0;
+    virtual void ZResourceManager_unk27() = 0;
+    virtual void ZResourceManager_unk28() = 0;
+    virtual void ZResourceManager_unk29() = 0;
+    virtual void ZResourceManager_unk30() = 0;
+    virtual void ZResourceManager_unk31() = 0;
+    virtual void ZResourceManager_unk32() = 0;
+    virtual void ZResourceManager_unk33() = 0;
+    virtual void ZResourceManager_unk34() = 0;
+    virtual void ZResourceManager_unk35() = 0;
+    virtual void ZResourceManager_unk36() = 0;
+    virtual void ZResourceManager_unk37() = 0;
+    virtual void ZResourceManager_unk38() = 0;
+    virtual void ZResourceManager_unk39() = 0;
+    virtual void ZResourceManager_unk40() = 0;
+    virtual void ZResourceManager_unk41() = 0;
+    virtual void ZResourceManager_unk42() = 0;
+    virtual void ZResourceManager_unk43() = 0;
+    virtual void ZResourceManager_unk44() = 0;
+    virtual void ZResourceManager_unk45() = 0;
+    virtual void ZResourceManager_unk46() = 0;
+    virtual void ZResourceManager_unk47() = 0;
+    virtual void ZResourceManager_unk48() = 0;
+    virtual void ZResourceManager_unk49() = 0;
+    virtual bool DoneLoading() = 0;
+
+    PAD(0x68);                                                // 0x8
+    TMap<uint32_t, IResourceInstaller*> m_ResourceInstallers; // 0x70
+    PAD(0x124);                                               // 0x98
+    volatile LONG m_nNumProcessing;                           // 0x1BC
 };
+
+class ZResourceDataBuffer : public ZSharedPointerTarget {
+  public:
+    void* m_pData = nullptr;
+    uint32 m_nSize = 0;
+    uint32 m_nCapacity = 0;
+    bool m_bOwnsDataPtr = false;
+};
+
+using ZResourceDataPtr = TSharedPointer<ZResourceDataBuffer>;
+
+class ZResourceReader : public ZSharedPointerTarget {
+  public:
+    ZResourceIndex m_ResourceIndex;
+    ZResourceDataPtr m_pResourceData;
+    uint32 m_nResourceDataSize = 0;
+    TArray<ZResourceIndex> m_ReferenceIndices;
+    TArray<SResourceReferenceFlags> m_ReferenceFlags;
+};
+
+static_assert(sizeof(ZResourceReader) == 88);
+
+using ZResourceReaderPtr = TSharedPointer<ZResourceReader>;
+
+class ZResourcePending {
+  public:
+    ZResourcePtr m_pResource;
+    ZResourceReaderPtr m_pResourceReader;
+};
+
+class IPackageManager {
+  public:
+    enum EPartitionType {
+        Standard,
+        Addon,
+    };
+
+    struct SPartitionInfo {
+        int32_t m_nIndex;                  // 0
+        ZString m_sPartitionID;            // 8
+        EPartitionType m_eType;            // 24
+        int32_t m_patchLevel;              // 28
+        uint64_t a32;                      // 32
+        uint64_t a40;                      // 40
+        ZString m_sMountPath;              // 48
+        uint64_t a64;                      // 64
+        bool a72;                          // 72
+        SPartitionInfo* m_pParent;         // 80
+        TArray<SPartitionInfo*> m_aAddons; // 88
+    };
+
+    virtual ~IPackageManager() {}
+};
+
+static_assert(sizeof(IPackageManager::SPartitionInfo) == 112);

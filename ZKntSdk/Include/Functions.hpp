@@ -27,6 +27,18 @@ class ZEntityImpl;
 class ZResourceManager;
 class ZResourceIndex;
 class ZConfigCommand;
+class ZResourceContainer;
+class ZRuntimeResourceID;
+struct SResourceReferenceFlags;
+class ZResourceReader;
+class ZResourceDataBuffer;
+template<typename T> class TSharedPointer;
+using ZResourceDataPtr = TSharedPointer<ZResourceDataBuffer>;
+class ZTemplateInstaller;
+class ZTemplateBlueprintInstaller;
+class ZCppEntityTypeInstaller;
+class ZCppEntityBlueprintInstaller;
+class ZResourcePending;
 
 namespace zknt {
     class Functions {
@@ -99,5 +111,26 @@ namespace zknt {
         EngineFunction<void(const char* pCommandName, const char* argv)>* ZConfigCommand_ExecuteCommand = nullptr;
 
         EngineFunction<ZConfigCommand*(uint32_t commandNameHash)>* ZConfigCommand_GetConfigCommand = nullptr;
+
+        EngineFunction<ZResourceIndex*(ZResourceContainer* th, ZResourceIndex& result, const ZRuntimeResourceID rid)>*
+            ZResourceContainer_AddResourceInternal = nullptr;
+
+        EngineFunction<void(ZResourceContainer* th, ZRuntimeResourceID rid, SResourceReferenceFlags flags)>*
+            ZResourceContainer_AddResourceReferenceInternal = nullptr;
+
+        EngineFunction<void(ZResourceContainer* th, ZResourceIndex index)>* ZResourceContainer_AcquireResourceReferences = nullptr;
+
+        EngineFunction<void(ZResourceReader* th, const ZResourceIndex& index, ZResourceDataPtr* pData, uint32_t dataSize)>*
+            ZResourceReader_ZResourceReader = nullptr;
+
+        EngineFunction<void(ZResourceReader* th)>* ZResourceReader_Dtor = nullptr;
+
+        EngineFunction<bool(ZTemplateInstaller* th, ZResourcePending* ResourcePending)>* ZTemplateInstaller_Install = nullptr;
+
+        EngineFunction<bool(ZTemplateBlueprintInstaller* th, ZResourcePending* ResourcePending)>* ZTemplateBlueprintInstaller_Install = nullptr;
+
+        EngineFunction<bool(ZCppEntityTypeInstaller* th, ZResourcePending* ResourcePending)>* ZCppEntityTypeInstaller_Install = nullptr;
+
+        EngineFunction<bool(ZCppEntityBlueprintInstaller* th, ZResourcePending* ResourcePending)>* ZCppEntityBlueprintInstaller_Install = nullptr;
     };
 }

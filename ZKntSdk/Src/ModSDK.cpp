@@ -3,6 +3,7 @@
 #include <MinHook.h>
 
 #include <Glacier/ZModule.hpp>
+#include <Glacier/ZResource.hpp>
 
 #include "HookImpl.hpp"
 #include "IPluginInterface.hpp"
@@ -253,31 +254,6 @@ namespace zknt {
         return PatchCodeInternal(p_Pattern, p_Mask, p_NewCode, p_CodeSize, p_TargetOffset, p_OriginalCode);
     }
 
-    void ModSDK::AllocateZString(ZString* p_Target, const char* p_Str, uint32_t p_Size) {
-        if (Globals()->GameSceneflowModule->IsEngineInitialized()) {
-            // If engine is initialized, allocate the normal way.
-            p_Target->m_nLength = p_Size;
-            p_Target->m_pChars = Functions()->ZStringCollection_Allocate->Call(p_Str, p_Size)->m_pDataStart;
-        }
-        else {
-            // Otherwise, allocate ourselves and make the game think it's a static allocation.
-            // This will leak memory, but best we can do for now before the engine is initialized.
-            auto* s_String = new char[p_Size + 1]{};
-            memcpy(s_String, p_Str, p_Size);
-            s_String[p_Size] = '\0';
-
-            *p_Target = ZString(std::string_view(s_String, p_Size));
-        }
-    }
-
-    void ModSDK::FreeZString(ZString* p_Target) {
-        if (p_Target->IsAllocated()) {
-            SDK()->Functions()->ZString_ZImpl_Free->Call(
-                reinterpret_cast<ZString::ZImpl*>(reinterpret_cast<uintptr_t>(p_Target->m_pChars) - sizeof(ZString::ZImpl))
-            );
-        }
-    }
-
     ImFont* ModSDK::GetImGuiLightFont() {
         return m_ImGuiRenderer ? m_ImGuiRenderer->GetLightFont() : nullptr;
     }
@@ -296,6 +272,31 @@ namespace zknt {
 
     ImFont* ModSDK::GetImGuiBlackFont() {
         return m_ImGuiRenderer ? m_ImGuiRenderer->GetBlackFont() : nullptr;
+    }
+
+    void ModSDK::AllocateZString(ZString* p_Target, const char* p_Str, uint32_t p_Size) {
+        if (Globals() && Globals()->GameSceneflowModule && Globals()->GameSceneflowModule->IsEngineInitialized()) {
+            // If engine is initialized, allocate the normal way.
+            p_Target->m_nLength = p_Size;
+            p_Target->m_pChars = Functions()->ZStringCollection_Allocate->Call(p_Str, p_Size)->m_pDataStart;
+        }
+        else {
+            // Otherwise, allocate ourselves and make the game think it's a static allocation.
+            // This will leak memory, but best we can do for now before the engine is initialized.
+            auto* s_String = new char[p_Size + 1]{};
+            memcpy(s_String, p_Str, p_Size);
+            s_String[p_Size] = '\0';
+
+            *p_Target = ZString(std::string_view(s_String, p_Size));
+        }
+    }
+
+    void ModSDK::FreeZString(ZString* p_Target) {
+        if (p_Target->IsAllocated() && Functions()) {
+            SDK()->Functions()->ZString_ZImpl_Free->Call(
+                reinterpret_cast<ZString::ZImpl*>(reinterpret_cast<uintptr_t>(p_Target->m_pChars) - sizeof(ZString::ZImpl))
+            );
+        }
     }
 
     zknt::IRenderer* ModSDK::GetRenderer() const {

@@ -19,6 +19,7 @@ find_package(minhook CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(directx-headers CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(simdjson CONFIG REQUIRED)
 
 CPMAddPackage("gh:OrfeasZ/ZHMTools@4.1.0")
 
@@ -44,6 +45,9 @@ if (EXISTS "${GAME_INSTALL_PATH}/Retail")
   foreach (MOD IN LISTS MODS)
     install(FILES "$<TARGET_FILE:${MOD}>" DESTINATION "${GAME_INSTALL_PATH}/Retail/mods")
   endforeach ()
+
+  # Install ResourceLib, needed by the Editor mod.
+  install(FILES "$<TARGET_FILE:ResourceLib_KNT>" DESTINATION "${GAME_INSTALL_PATH}/Retail")
 endif ()
 
 # Packageable install layout (always emitted to ${CMAKE_INSTALL_PREFIX}).
