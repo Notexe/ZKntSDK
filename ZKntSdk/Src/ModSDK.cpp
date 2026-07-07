@@ -326,6 +326,219 @@ namespace zknt {
         }
     }
 
+    void ModSDK::SetPluginSetting(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, const ZString& p_Value) {
+        if (!p_Plugin) {
+            return;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return;
+        }
+
+        s_Settings->SetSetting(p_Section.c_str(), p_Name.c_str(), p_Value.c_str());
+    }
+
+    void ModSDK::SetPluginSettingInt(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, int64_t p_Value) {
+        if (!p_Plugin) {
+            return;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return;
+        }
+
+        s_Settings->SetSetting(p_Section.c_str(), p_Name.c_str(), std::to_string(p_Value));
+    }
+
+    void ModSDK::SetPluginSettingUInt(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, uint64_t p_Value) {
+        if (!p_Plugin) {
+            return;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return;
+        }
+
+        s_Settings->SetSetting(p_Section.c_str(), p_Name.c_str(), std::to_string(p_Value));
+    }
+
+    void ModSDK::SetPluginSettingDouble(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, double p_Value) {
+        if (!p_Plugin) {
+            return;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return;
+        }
+
+        s_Settings->SetSetting(p_Section.c_str(), p_Name.c_str(), std::to_string(p_Value));
+    }
+
+    void ModSDK::SetPluginSettingBool(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, bool p_Value) {
+        if (!p_Plugin) {
+            return;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return;
+        }
+
+        s_Settings->SetSetting(p_Section.c_str(), p_Name.c_str(), p_Value ? "true" : "false");
+    }
+
+    ZString ModSDK::GetPluginSetting(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, const ZString& p_DefaultValue) {
+        if (!p_Plugin) {
+            return p_DefaultValue;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return p_DefaultValue;
+        }
+
+        return s_Settings->GetSetting(p_Section.c_str(), p_Name.c_str(), p_DefaultValue.c_str());
+    }
+
+    int64_t ModSDK::GetPluginSettingInt(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, int64_t p_DefaultValue) {
+        if (!p_Plugin) {
+            return p_DefaultValue;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return p_DefaultValue;
+        }
+
+        const auto s_Value = s_Settings->GetSetting(p_Section.c_str(), p_Name.c_str(), std::to_string(p_DefaultValue));
+
+        try {
+            return std::stoll(s_Value);
+        }
+        catch (const std::exception&) {
+            return p_DefaultValue;
+        }
+    }
+
+    uint64_t ModSDK::GetPluginSettingUInt(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, uint64_t p_DefaultValue) {
+        if (!p_Plugin) {
+            return p_DefaultValue;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return p_DefaultValue;
+        }
+
+        const auto s_Value = s_Settings->GetSetting(p_Section.c_str(), p_Name.c_str(), std::to_string(p_DefaultValue));
+
+        try {
+            return std::stoull(s_Value);
+        }
+        catch (const std::exception&) {
+            return p_DefaultValue;
+        }
+    }
+
+    double ModSDK::GetPluginSettingDouble(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, double p_DefaultValue) {
+        if (!p_Plugin) {
+            return p_DefaultValue;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return p_DefaultValue;
+        }
+
+        const auto s_Value = s_Settings->GetSetting(p_Section.c_str(), p_Name.c_str(), std::to_string(p_DefaultValue));
+
+        try {
+            return std::stod(s_Value);
+        }
+        catch (const std::exception&) {
+            return p_DefaultValue;
+        }
+    }
+
+    bool ModSDK::GetPluginSettingBool(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name, bool p_DefaultValue) {
+        if (!p_Plugin) {
+            return p_DefaultValue;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return p_DefaultValue;
+        }
+
+        const auto s_Value = s_Settings->GetSetting(p_Section.c_str(), p_Name.c_str(), p_DefaultValue ? "true" : "false");
+
+        if (s_Value == "true" || s_Value == "1" || s_Value == "yes" || s_Value == "on" || s_Value == "y") {
+            return true;
+        }
+        else if (s_Value == "false" || s_Value == "0" || s_Value == "no" || s_Value == "off" || s_Value == "n") {
+            return false;
+        }
+        else {
+            return p_DefaultValue;
+        }
+    }
+
+    bool ModSDK::HasPluginSetting(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name) {
+        if (!p_Plugin) {
+            return false;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return false;
+        }
+
+        return s_Settings->HasSetting(p_Section.c_str(), p_Name.c_str());
+    }
+
+    void ModSDK::RemovePluginSetting(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name) {
+        if (!p_Plugin) {
+            return;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return;
+        }
+
+        s_Settings->RemoveSetting(p_Section.c_str(), p_Name.c_str());
+    }
+
+    void ModSDK::ReloadPluginSettings(IPluginInterface* p_Plugin) {
+        if (!p_Plugin) {
+            return;
+        }
+
+        auto s_Settings = m_ModLoader->GetModSettings(p_Plugin);
+
+        if (!s_Settings) {
+            return;
+        }
+
+        s_Settings->Reload();
+    }
+
     zknt::IRenderer* ModSDK::GetRenderer() const {
         return m_ImGuiRenderer.get();
     }

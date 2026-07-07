@@ -88,6 +88,7 @@ install(CODE [[
 ]])
 
 # Install licenses from external projects.
+install(FILES "External/mINI/LICENSE" DESTINATION licenses RENAME mINI.txt)
 install(FILES "External/IconFontCppHeaders/licence.txt" DESTINATION licenses RENAME IconFontCppHeaders.txt)
 
 # Install licenses from CPM packages.

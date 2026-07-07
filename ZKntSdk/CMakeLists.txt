@@ -36,6 +36,7 @@ target_include_directories(ZKntSdk PRIVATE
         ${CR_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/Src
         ${CMAKE_SOURCE_DIR}/DirectInputProxy/Include
+        ${CMAKE_SOURCE_DIR}/External/mINI/src/mini
 )
 
 target_include_directories(ZKntSdk PUBLIC
@@ -72,6 +73,12 @@ if (NOT MSVC)
 endif()
 
 add_dependencies(ZKntSdk DirectInputProxy)
+
+install(TARGETS ZKntSdk
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+)
 
 # Install icon header.
 install(FILES "${CMAKE_SOURCE_DIR}/External/IconFontCppHeaders/IconsMaterialDesign.h" DESTINATION include)

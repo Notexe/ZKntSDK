@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IPluginInterface.hpp"
+#include "ModSettings.hpp"
 
 #include <cr.h>
 
@@ -49,6 +50,8 @@ namespace zknt {
 
         IPluginInterface* GetModByName(const std::string& p_Name);
 
+        ModSettings* GetModSettings(IPluginInterface* p_PluginInterface);
+
         std::vector<IPluginInterface*> GetLoadedMods() {
             std::shared_lock s_Lock(m_Mutex);
             std::vector<IPluginInterface*> s_Result;
@@ -72,6 +75,7 @@ namespace zknt {
             // Cb_RegisterPlugin to auto-Init the new instance produced by
             // a hot-reload (cr_plugin_update -> CR_UNLOAD + CR_LOAD).
             bool m_FirstLoadDone = false;
+            std::unique_ptr<ModSettings> m_Settings;
         };
 
       private:

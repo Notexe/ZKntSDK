@@ -260,6 +260,7 @@ namespace zknt {
         s_Owned->m_Services.RegisterPlugin = &ModLoader::Cb_RegisterPlugin;
         s_Owned->m_Services.UnregisterPlugin = &ModLoader::Cb_UnregisterPlugin;
         s_Owned->m_Ctx.userdata = &s_Owned->m_Services;
+        s_Owned->m_Settings = std::make_unique<ModSettings>(p_Name, ModsDir());
 
         {
             ScopedPendingMod s_Pending(this, s_Owned.get());
@@ -402,6 +403,18 @@ namespace zknt {
         std::shared_lock s_Lock(m_Mutex);
         const auto s_It = m_LoadedMods.find(knt::util::ToLowerCase(p_Name));
         return s_It == m_LoadedMods.end() ? nullptr : s_It->second->m_Plugin;
+    }
+
+    ModSettings* ModLoader::GetModSettings(IPluginInterface* p_Plugin) {
+        std::shared_lock lock(m_Mutex);
+
+        for (const auto& [_, s_Mod] : m_LoadedMods) {
+            if (s_Mod->m_Plugin == p_Plugin) {
+                return s_Mod->m_Settings.get();
+            }
+        }
+
+        return nullptr;
     }
 
     void ModLoader::Cb_RegisterPlugin(void* p_Token, IPluginInterface* p_Plugin) {
