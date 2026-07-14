@@ -123,4 +123,13 @@ zknt::Globals::Globals() {
         "\x48\x8B\x05\x00\x00\x00\x00\x48\x85\xC0\x0F\x85\x00\x00\x00\x00\x48\x89\x5C\x24\x20", "xxx????xxxxx????xxxxx", 3, ZComponentManager**,
         ComponentManager
     );
+
+    PATTERN_RELATIVE_GLOBAL("\x4C\x8D\x2D\x00\x00\x00\x00\x49\x8B\xCD\xE8", "xxx????xxxx", 3, ZRenderManager*, RenderManager);
+
+    PATTERN_RELATIVE_GLOBAL(
+        "\x48\x8B\x0D\x00\x00\x00\x00\x4C\x8D\x44\x24\x48\x48\x81\xC1\x00\x00\x00\x00\xC7\x44\x24\x58", "xxx????xxxxxxxx????xxxx", 3,
+        SD3D12ObjectPools**, D3D12ObjectPools
+    );
+
+    PATTERN_RELATIVE_GLOBAL("\x4C\x8B\x0D\x00\x00\x00\x00\x4C\x8B\xD2", "xxx????xxx", 3, SPrimDrawData**, PrimDrawData);
 }

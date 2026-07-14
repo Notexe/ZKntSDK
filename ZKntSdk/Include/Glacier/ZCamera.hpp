@@ -29,9 +29,15 @@ class ICameraEntity : public IRenderDestinationSource {
     virtual void ICameraEntity_unk5() = 0;
     virtual void ICameraEntity_unk6() = 0;
     virtual void ICameraEntity_unk7() = 0;
-    virtual void ICameraEntity_unk8() = 0;
-    virtual void ICameraEntity_unk9() = 0;
+    virtual float GetNearZ() = 0;
+    virtual float GetFarZ() = 0;
     virtual void SetFovYDeg(float fFovYDeg) = 0;
+    virtual void ICameraEntity_unk11() = 0;
+    virtual void ICameraEntity_unk12() = 0;
+    virtual void ICameraEntity_unk13() = 0;
+    virtual float GetAspectWByH() = 0;
+    virtual float GetFovYDeg() = 0;
+    virtual float GetFov() = 0;
 };
 
 class ZCameraEntity : public ZRenderableEntity, public ICameraEntity {};

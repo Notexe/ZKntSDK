@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ZObjectPool.hpp"
+#include "ZInfiniteBuffer.hpp"
 
 template<typename T, size_t N> class TNonReallocatingArray {
   public:

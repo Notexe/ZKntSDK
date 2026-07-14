@@ -17,6 +17,9 @@ class ZGameTimeManager;
 class ZCollisionManager;
 class ZPackageManagerBase;
 class ZComponentManager;
+class ZRenderManager;
+struct SD3D12ObjectPools;
+struct SPrimDrawData;
 
 namespace zknt {
     class Globals {
@@ -61,5 +64,8 @@ namespace zknt {
         void* ZPadEntityBlueprintFactory_vtbl = nullptr;
         void* ZShadernodeEntityBlueprintFactory_vtbl = nullptr;
         ZComponentManager** ComponentManager = nullptr;
+        ZRenderManager* RenderManager = nullptr;
+        SD3D12ObjectPools** D3D12ObjectPools = nullptr;
+        SPrimDrawData** PrimDrawData = nullptr;
     };
 }

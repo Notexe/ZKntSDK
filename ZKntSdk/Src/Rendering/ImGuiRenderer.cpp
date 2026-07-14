@@ -196,6 +196,7 @@ namespace zknt::rendering {
         if (p_SwapChain == m_SwapChain.m_Ref) {
             return;
         }
+
         m_SwapChain = p_SwapChain;
     }
 
@@ -203,6 +204,7 @@ namespace zknt::rendering {
         if (p_CommandQueue == m_CommandQueue.m_Ref) {
             return;
         }
+
         m_CommandQueue = p_CommandQueue;
     }
 
@@ -210,10 +212,12 @@ namespace zknt::rendering {
         if (!m_CommandQueue) {
             return;
         }
+
         if (!SetupRenderer(p_SwapChain)) {
             Logger::Error("[ImGuiRenderer] Failed to set up renderer.");
             return;
         }
+
         if (!m_ImguiVisible) {
             return;
         }
@@ -225,6 +229,7 @@ namespace zknt::rendering {
         auto& s_FrameCtx = m_FrameContext[s_NextFrame];
 
         const std::uint64_t s_PendingValue = s_FrameCtx.m_FenceValue.load(std::memory_order_acquire);
+
         if (s_PendingValue != 0 && s_PendingValue > m_Fence->GetCompletedValue()) {
             BreakIfFailed(m_Fence->SetEventOnCompletion(s_PendingValue, m_FenceEvent.m_Handle));
             WaitForSingleObject(m_FenceEvent.m_Handle, INFINITE);
@@ -242,6 +247,7 @@ namespace zknt::rendering {
         s_RtBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         s_RtBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
         s_RtBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
         m_CommandList->ResourceBarrier(1, &s_RtBarrier);
 
         const auto s_RtvHandle = m_RtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -259,6 +265,7 @@ namespace zknt::rendering {
         s_PresentBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         s_PresentBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
         s_PresentBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
         m_CommandList->ResourceBarrier(1, &s_PresentBarrier);
         BreakIfFailed(m_CommandList->Close());
 
@@ -279,11 +286,13 @@ namespace zknt::rendering {
         auto& s_FrameCtx = m_FrameContext[m_FrameCounter.load(std::memory_order_acquire) % c_MaxRenderedFrames];
         const std::uint64_t s_NewFence = ++m_FenceValue;
         s_FrameCtx.m_FenceValue.store(s_NewFence, std::memory_order_release);
+
         BreakIfFailed(m_CommandQueue->Signal(m_Fence, s_NewFence));
     }
 
     void ImGuiRenderer::WaitForCurrentFrameToFinish() const {
         const std::uint64_t s_Fence = m_FenceValue.load(std::memory_order_acquire);
+
         if (s_Fence != 0 && s_Fence > m_Fence->GetCompletedValue()) {
             BreakIfFailed(m_Fence->SetEventOnCompletion(s_Fence, m_FenceEvent.m_Handle));
             WaitForSingleObject(m_FenceEvent.m_Handle, INFINITE);
@@ -296,23 +305,27 @@ namespace zknt::rendering {
         }
 
         ScopedD3DRef<ID3D12Device> s_Device;
+
         if (p_SwapChain->GetDevice(REF_IID_PPV_ARGS(s_Device)) != S_OK) {
             return false;
         }
 
-        DXGI_SWAP_CHAIN_DESC1 s_Desc{};
-        if (p_SwapChain->GetDesc1(&s_Desc) != S_OK) {
+        DXGI_SWAP_CHAIN_DESC1 s_SwapChainDesc{};
+
+        if (p_SwapChain->GetDesc1(&s_SwapChainDesc) != S_OK) {
             return false;
         }
 
         m_SwapChain = p_SwapChain;
-        const auto s_BufferCount = s_Desc.BufferCount;
+
+        const auto s_BufferCount = s_SwapChainDesc.BufferCount;
 
         {
             D3D12_DESCRIPTOR_HEAP_DESC s_RtvHeapDesc{};
             s_RtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
             s_RtvHeapDesc.NumDescriptors = s_BufferCount;
             s_RtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
             if (s_Device->CreateDescriptorHeap(&s_RtvHeapDesc, IID_PPV_ARGS(m_RtvDescriptorHeap.ReleaseAndGetPtr())) != S_OK) {
                 return false;
             }
@@ -323,6 +336,7 @@ namespace zknt::rendering {
             s_SrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             s_SrvHeapDesc.NumDescriptors = c_MaxSRVDescriptors;
             s_SrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
             if (s_Device->CreateDescriptorHeap(&s_SrvHeapDesc, IID_PPV_ARGS(m_SrvDescriptorHeap.ReleaseAndGetPtr())) != S_OK) {
                 return false;
             }
@@ -330,22 +344,29 @@ namespace zknt::rendering {
 
         for (UINT i = 0; i < c_MaxRenderedFrames; ++i) {
             auto& s_Frame = m_FrameContext[i];
+
             if (s_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(s_Frame.m_CommandAllocator.ReleaseAndGetPtr()))
                 != S_OK) {
                 return false;
             }
+
             s_Frame.m_FenceValue.store(0);
         }
 
         m_BackBuffers.clear();
         m_BackBuffers.resize(s_BufferCount);
+
         m_RtvDescriptorSize = s_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
         const auto s_RtvHandle = m_RtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
         for (UINT i = 0; i < s_BufferCount; ++i) {
             if (p_SwapChain->GetBuffer(i, IID_PPV_ARGS(m_BackBuffers[i].ReleaseAndGetPtr())) != S_OK) {
                 return false;
             }
+
             const D3D12_CPU_DESCRIPTOR_HANDLE s_Descriptor{s_RtvHandle.ptr + i * m_RtvDescriptorSize};
+
             s_Device->CreateRenderTargetView(m_BackBuffers[i], nullptr, s_Descriptor);
         }
 
@@ -359,7 +380,9 @@ namespace zknt::rendering {
         if (s_Device->CreateFence(m_FenceValue.load(), D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_Fence.ReleaseAndGetPtr())) != S_OK) {
             return false;
         }
+
         m_FenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+
         if (!m_FenceEvent) {
             return false;
         }
@@ -376,10 +399,12 @@ namespace zknt::rendering {
         s_InitInfo.SrvDescriptorHeap = m_SrvDescriptorHeap;
         s_InitInfo.LegacySingleSrvCpuDescriptor = m_SrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
         s_InitInfo.LegacySingleSrvGpuDescriptor = m_SrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
         if (!ImGui_ImplDX12_Init(&s_InitInfo)) {
             Logger::Error("[ImGuiRenderer] ImGui_ImplDX12_Init failed.");
             return false;
         }
+
         if (!ImGui_ImplDX12_CreateDeviceObjects()) {
             Logger::Error("[ImGuiRenderer] ImGui_ImplDX12_CreateDeviceObjects failed.");
             return false;
@@ -387,13 +412,18 @@ namespace zknt::rendering {
 
         ImGuiIO& s_Io = ImGui::GetIO();
         RECT s_Rect{};
+
         GetClientRect(m_Hwnd, &s_Rect);
+
         s_Io.DisplaySize = ImVec2(static_cast<float>(s_Rect.right - s_Rect.left), static_cast<float>(s_Rect.bottom - s_Rect.top));
         s_Io.FontGlobalScale = (s_Io.DisplaySize.y / 1800.f);
+
         ImGui::GetMainViewport()->PlatformHandleRaw = m_Hwnd;
 
         m_RendererSetup = true;
+
         Logger::Info("[ImGuiRenderer] Renderer ready (hwnd={}).", static_cast<void*>(m_Hwnd));
+
         return true;
     }
 
@@ -401,6 +431,7 @@ namespace zknt::rendering {
         if (!m_RendererSetup) {
             return;
         }
+
         WaitForCurrentFrameToFinish();
         ImGui_ImplDX12_Shutdown();
 
@@ -419,11 +450,15 @@ namespace zknt::rendering {
         if (!m_RendererSetup) {
             return;
         }
+
         WaitForCurrentFrameToFinish();
+
         for (auto& s_Frame : m_FrameContext) {
             s_Frame.m_FenceValue.store(m_FenceValue.load(std::memory_order_acquire));
         }
+
         m_BackBuffers.clear();
+
         ImGui_ImplDX12_InvalidateDeviceObjects();
     }
 
@@ -431,30 +466,42 @@ namespace zknt::rendering {
         if (!m_RendererSetup) {
             return;
         }
-        DXGI_SWAP_CHAIN_DESC1 s_Desc{};
-        if (p_SwapChain->GetDesc1(&s_Desc) != S_OK) {
+
+        DXGI_SWAP_CHAIN_DESC1 s_SwapChainDesc{};
+
+        if (p_SwapChain->GetDesc1(&s_SwapChainDesc) != S_OK) {
             return;
         }
+
         ScopedD3DRef<ID3D12Device> s_Device;
+
         if (p_SwapChain->GetDevice(REF_IID_PPV_ARGS(s_Device)) != S_OK) {
             return;
         }
 
-        m_BackBuffers.resize(s_Desc.BufferCount);
+        m_BackBuffers.resize(s_SwapChainDesc.BufferCount);
+
         m_RtvDescriptorSize = s_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
         const auto s_RtvHandle = m_RtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
         for (UINT i = 0; i < m_BackBuffers.size(); ++i) {
             if (p_SwapChain->GetBuffer(i, IID_PPV_ARGS(m_BackBuffers[i].ReleaseAndGetPtr())) != S_OK) {
                 return;
             }
+
             const D3D12_CPU_DESCRIPTOR_HANDLE s_Descriptor{s_RtvHandle.ptr + i * m_RtvDescriptorSize};
+
             s_Device->CreateRenderTargetView(m_BackBuffers[i], nullptr, s_Descriptor);
         }
+
         ImGui_ImplDX12_CreateDeviceObjects();
 
         ImGuiIO& s_Io = ImGui::GetIO();
         RECT s_Rect{};
+
         GetClientRect(m_Hwnd, &s_Rect);
+
         s_Io.DisplaySize = ImVec2(static_cast<float>(s_Rect.right - s_Rect.left), static_cast<float>(s_Rect.bottom - s_Rect.top));
     }
 

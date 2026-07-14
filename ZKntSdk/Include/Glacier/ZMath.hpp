@@ -563,13 +563,6 @@ struct alignas(16) SMatrix {
             float4 Up;
             float4 Pos;
         };
-
-        struct {
-            float4 CameraRight;
-            float4 CameraUp;
-            float4 CameraBackward;
-            float4 CameraPosition;
-        };
     };
 };
 

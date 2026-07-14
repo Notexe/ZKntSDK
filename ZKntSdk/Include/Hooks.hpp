@@ -12,6 +12,8 @@ class ZEntityRef;
 class ZEntityType;
 class ZFreeCameraControlEditorStyleEntity;
 class ZKntLoadoutCollectionEntity;
+struct SRenderCameraData;
+struct SPassExecution;
 
 namespace zknt {
     class ModSDK;
@@ -41,6 +43,8 @@ namespace zknt {
         Hook<void(ZFreeCameraControlEditorStyleEntity* th, float fDeltaTime)>* ZFreeCameraControlEditorStyleEntity_MoveCameraWithKey = nullptr;
         Hook<ZKntLoadoutCollectionEntity*(ZKntLoadoutCollectionEntity* th, bool unk)>* ZKntLoadoutCollectionEntity_ZKntLoadoutCollectionEntity =
             nullptr;
+        Hook<void(const SRenderCameraData& cameraData, uint32_t unk)>* UpdateStreamlineConstants;
+        Hook<void(SPassExecution* th, int32_t renderDeviceContextIndex)>* SPassExecution_ExecutePass;
 
       private:
         void EnableAll();

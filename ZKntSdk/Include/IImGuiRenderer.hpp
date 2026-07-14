@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cstdint>
+
 #include "imgui.h"
 
 #include "Common.hpp"
 
-#include <cstdint>
+#include "Glacier/ZMath.hpp"
 
 struct ImFont;
 struct ImGuiContext;
@@ -16,9 +18,9 @@ namespace zknt {
         std::uint32_t m_Height = 0;
     };
 
-    class IRenderer {
+    class IImGuiRenderer {
       public:
-        virtual ~IRenderer() = default;
+        virtual ~IImGuiRenderer() = default;
 
         virtual bool IsVisible() const = 0;
         virtual ImGuiContext* GetImGuiContext() const = 0;

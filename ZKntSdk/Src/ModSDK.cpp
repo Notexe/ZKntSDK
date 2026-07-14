@@ -13,6 +13,7 @@
 #include "UI/ModSelector.hpp"
 #include "Util/ProcessUtils.hpp"
 #include "Globals.hpp"
+#include <Glacier/ZRender.hpp>
 
 extern void SetupLogging(spdlog::level::level_enum p_LogLevel);
 extern void FlushLoggers();
@@ -61,41 +62,97 @@ namespace zknt {
 
     namespace {
         void Cb_SetSwapChain(IDXGISwapChain3* p_SwapChain) {
-            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetRenderer()) {
-                static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetRenderer())->SetSwapChain(p_SwapChain);
+            auto* s_Sdk = ModSDK::GetInstance();
+
+            if (s_Sdk) {
+                if (s_Sdk->GetImGuiRenderer()) {
+                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetImGuiRenderer())->SetSwapChain(p_SwapChain);
+                }
+
+                if (s_Sdk->GetDirectXTKRenderer()) {
+                    static_cast<zknt::rendering::DirectXTKRenderer*>(s_Sdk->GetDirectXTKRenderer())->SetSwapChain(p_SwapChain);
+                }
             }
         }
+
         void Cb_SetCommandQueue(ID3D12CommandQueue* p_CommandQueue) {
-            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetRenderer()) {
-                static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetRenderer())->SetCommandQueue(p_CommandQueue);
+            auto* s_Sdk = ModSDK::GetInstance();
+
+            if (s_Sdk) {
+                if (s_Sdk->GetImGuiRenderer()) {
+                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetImGuiRenderer())->SetCommandQueue(p_CommandQueue);
+                }
+
+                if (s_Sdk->GetDirectXTKRenderer()) {
+                    static_cast<zknt::rendering::DirectXTKRenderer*>(s_Sdk->GetDirectXTKRenderer())->SetCommandQueue(p_CommandQueue);
+                }
             }
         }
+
         void Cb_OnPresent(IDXGISwapChain3* p_SwapChain) {
-            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetRenderer()) {
-                static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetRenderer())->OnPresent(p_SwapChain);
+            auto* s_Sdk = ModSDK::GetInstance();
+
+            if (s_Sdk) {
+                if (s_Sdk->GetImGuiRenderer()) {
+                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetImGuiRenderer())->OnPresent(p_SwapChain);
+                }
+
+                if (s_Sdk->GetDirectXTKRenderer()) {
+                    static_cast<zknt::rendering::DirectXTKRenderer*>(s_Sdk->GetDirectXTKRenderer())->OnPresent(p_SwapChain);
+                }
             }
         }
+
         void Cb_PostPresent(IDXGISwapChain3* p_SwapChain, HRESULT p_PresentResult) {
-            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetRenderer()) {
-                static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetRenderer())->PostPresent(p_SwapChain, p_PresentResult);
+            auto* s_Sdk = ModSDK::GetInstance();
+
+            if (s_Sdk) {
+                if (s_Sdk->GetImGuiRenderer()) {
+                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetImGuiRenderer())->PostPresent(p_SwapChain, p_PresentResult);
+                }
+
+                if (s_Sdk->GetDirectXTKRenderer()) {
+                    static_cast<zknt::rendering::DirectXTKRenderer*>(s_Sdk->GetDirectXTKRenderer())->PostPresent(p_SwapChain, p_PresentResult);
+                }
             }
         }
+
         void Cb_OnReset(IDXGISwapChain3* p_SwapChain) {
-            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetRenderer()) {
-                static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetRenderer())->OnReset(p_SwapChain);
+            auto* s_Sdk = ModSDK::GetInstance();
+
+            if (s_Sdk) {
+                if (s_Sdk->GetImGuiRenderer()) {
+                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetImGuiRenderer())->OnReset(p_SwapChain);
+                }
+
+                if (s_Sdk->GetDirectXTKRenderer()) {
+                    static_cast<zknt::rendering::DirectXTKRenderer*>(s_Sdk->GetDirectXTKRenderer())->OnReset(p_SwapChain);
+                }
             }
         }
+
         void Cb_PostReset(IDXGISwapChain3* p_SwapChain) {
-            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetRenderer()) {
-                static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetRenderer())->PostReset(p_SwapChain);
+            auto* s_Sdk = ModSDK::GetInstance();
+
+            if (s_Sdk) {
+                if (s_Sdk->GetImGuiRenderer()) {
+                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetImGuiRenderer())->PostReset(p_SwapChain);
+                }
+
+                if (s_Sdk->GetDirectXTKRenderer()) {
+                    static_cast<zknt::rendering::DirectXTKRenderer*>(s_Sdk->GetDirectXTKRenderer())->PostReset(p_SwapChain);
+                }
             }
         }
+
         knt::host::WndProcResult Cb_OnWndProc(HWND p_Hwnd, UINT p_Msg, WPARAM p_Wparam, LPARAM p_Lparam) {
-            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetRenderer()) {
+            if (auto* s_Sdk = ModSDK::GetInstance(); s_Sdk && s_Sdk->GetImGuiRenderer()) {
                 const auto s_Result =
-                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetRenderer())->OnWndProc(p_Hwnd, p_Msg, p_Wparam, p_Lparam);
+                    static_cast<zknt::rendering::ImGuiRenderer*>(s_Sdk->GetImGuiRenderer())->OnWndProc(p_Hwnd, p_Msg, p_Wparam, p_Lparam);
+
                 return {s_Result.m_Handled, s_Result.m_Value};
             }
+
             return {false, 0};
         }
 
@@ -123,6 +180,7 @@ namespace zknt {
         }
 
         m_ImGuiRenderer.reset();
+        m_DirectXTKRenderer.reset();
 
         // Close the hook gate and drain in-flight detours before tearing MinHook down.
         zknt::g_HookGate.BeginReload();
@@ -181,6 +239,7 @@ namespace zknt {
         m_Globals = std::make_unique<zknt::Globals>();
         m_Functions = std::make_unique<zknt::Functions>();
         m_ImGuiRenderer = std::make_unique<zknt::rendering::ImGuiRenderer>();
+        m_DirectXTKRenderer = std::make_unique<zknt::rendering::DirectXTKRenderer>();
 
         if (m_HostServices && m_HostServices->RegisterRenderingCallbacks) {
             m_HostServices->RegisterRenderingCallbacks(&g_RenderingCallbacks);
@@ -217,6 +276,7 @@ namespace zknt {
         });
 
         Hooks()->Engine_Init->AddDetour(this, &ModSDK::Engine_Init);
+        Hooks()->SPassExecution_ExecutePass->AddDetour(this, &ModSDK::SPassExecution_ExecutePass);
 
         if (m_EngineInitialized) {
             Logger::Info("Engine was already initialized before SDK load; replaying engine-init flow.");
@@ -543,8 +603,28 @@ namespace zknt {
         s_Settings->Reload();
     }
 
-    zknt::IRenderer* ModSDK::GetRenderer() const {
+    bool ModSDK::WorldToScreen(const SVector3& p_WorldPos, SVector2& p_Out) {
+        return m_DirectXTKRenderer->WorldToScreen(p_WorldPos, p_Out);
+    }
+
+    bool ModSDK::ScreenToWorld(const SVector2& p_ScreenPos, SVector3& p_WorldPosOut, SVector3& p_DirectionOut) {
+        return m_DirectXTKRenderer->ScreenToWorld(p_ScreenPos, p_WorldPosOut, p_DirectionOut);
+    }
+
+    SMatrix ModSDK::GetViewMatrix() const {
+        return m_DirectXTKRenderer->GetViewMatrix();
+    }
+
+    SMatrix ModSDK::GetProjectionMatrix() const {
+        return m_DirectXTKRenderer->GetProjectionMatrix();
+    }
+
+    zknt::IImGuiRenderer* ModSDK::GetImGuiRenderer() const {
         return m_ImGuiRenderer.get();
+    }
+
+    zknt::IDirectXTKRenderer* ModSDK::GetDirectXTKRenderer() const {
+        return m_DirectXTKRenderer.get();
     }
 
     zknt::ModLoader* ModSDK::GetModLoader() const {
@@ -649,6 +729,8 @@ namespace zknt {
             }
         }
 
+        m_DirectXTKRenderer->OnEngineInitialized();
+
         if (m_ModLoader) {
             for (auto* s_Plugin : m_ModLoader->GetLoadedMods()) {
                 if (s_Plugin) {
@@ -667,4 +749,12 @@ namespace zknt {
         return {HookAction::Return(), s_Result};
     }
 
+    DEFINE_DETOUR_WITH_CONTEXT(ModSDK, void, SPassExecution_ExecutePass, SPassExecution* th, int32_t renderDeviceContextIndex) {
+        if (th->m_pPassExecutionContext->m_pPassNode && th->m_pPassExecutionContext->m_pPassNode->m_DepthStencil
+            && th->m_pPassExecutionContext->m_pPassNode->m_DepthStencil->m_pTexture->m_pResource && m_DirectXTKRenderer) {
+            m_DirectXTKRenderer->SetDepthBuffer(th->m_pPassExecutionContext->m_pPassNode->m_DepthStencil->m_pTexture->m_pResource);
+        }
+
+        return {HookAction::Continue()};
+    }
 }

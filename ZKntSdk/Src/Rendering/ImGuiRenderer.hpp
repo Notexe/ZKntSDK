@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IRenderer.hpp"
+#include "IImGuiRenderer.hpp"
 #include "D3DUtils.hpp"
 
 #include <array>
@@ -12,7 +12,7 @@
 #include <imgui.h>
 
 namespace zknt::rendering {
-    class ImGuiRenderer final : public IRenderer {
+    class ImGuiRenderer final : public IImGuiRenderer {
       public:
         struct FrameContext {
             ScopedD3DRef<ID3D12CommandAllocator> m_CommandAllocator;

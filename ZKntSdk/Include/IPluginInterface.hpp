@@ -3,6 +3,7 @@
 #include "Common.hpp"
 #include "Hooks.hpp"
 #include "IModSDK.hpp"
+#include "IDirectXTKRenderer.hpp"
 
 #include <cr.h>
 #include <imgui.h>
@@ -35,6 +36,19 @@ namespace zknt {
         virtual void OnDrawUI(bool p_HasFocus) {}
 
         virtual void OnDrawMenu() {}
+
+        // Invoked on the render thread.
+        virtual void OnDraw3D(IDirectXTKRenderer* p_Renderer) {}
+
+        /**
+         * Draw with a depth buffer active, so drawn objects can be occluded by objects in the scene.
+         *
+         * Invoked on the render thread.
+         */
+        virtual void OnDepthDraw3D(IDirectXTKRenderer* p_Renderer) {}
+
+        // Invoked on the render thread.
+        virtual void OnDraw2D(IDirectXTKRenderer* p_Renderer) {}
 
       private:
         virtual void CleanupUI() {

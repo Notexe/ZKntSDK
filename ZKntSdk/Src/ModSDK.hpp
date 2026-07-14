@@ -5,6 +5,7 @@
 #include "Functions.hpp"
 #include "Globals.hpp"
 #include "Rendering/ImGuiRenderer.hpp"
+#include "Rendering/DirectXTKRenderer.hpp"
 #include "HostServices.hpp"
 
 #include <functional>
@@ -108,8 +109,15 @@ namespace zknt {
         void RemovePluginSetting(IPluginInterface* p_Plugin, const ZString& p_Section, const ZString& p_Name) override;
         void ReloadPluginSettings(IPluginInterface* p_Plugin) override;
 
+        bool WorldToScreen(const SVector3& p_WorldPos, SVector2& p_Out) override;
+        bool ScreenToWorld(const SVector2& p_ScreenPos, SVector3& p_WorldPosOut, SVector3& p_DirectionOut) override;
+
+        SMatrix GetViewMatrix() const override;
+        SMatrix GetProjectionMatrix() const override;
+
         // SDK-internal methods.
-        IRenderer* GetRenderer() const;
+        IImGuiRenderer* GetImGuiRenderer() const;
+        IDirectXTKRenderer* GetDirectXTKRenderer() const;
         ModLoader* GetModLoader() const;
         ui::ModSelector* GetUIModSelector() const;
         [[nodiscard]] bool IsEngineInitialized() const {
@@ -139,6 +147,7 @@ namespace zknt {
       private:
         // Detours
         DECLARE_DETOUR_WITH_CONTEXT(ModSDK, bool, Engine_Init, void* th, void* a2);
+        DECLARE_DETOUR_WITH_CONTEXT(ModSDK, void, SPassExecution_ExecutePass, SPassExecution* th, int32_t renderDeviceContextIndex);
 
       private:
         uintptr_t m_ModuleBase;
@@ -153,6 +162,7 @@ namespace zknt {
         std::unique_ptr<::zknt::Functions> m_Functions;
         std::unique_ptr<::zknt::Globals> m_Globals;
         std::unique_ptr<rendering::ImGuiRenderer> m_ImGuiRenderer;
+        std::shared_ptr<rendering::DirectXTKRenderer> m_DirectXTKRenderer;
         std::unique_ptr<ModLoader> m_ModLoader;
         std::unique_ptr<ui::ModSelector> m_ModSelector;
         std::unique_ptr<ui::MainMenu> m_MainMenu;

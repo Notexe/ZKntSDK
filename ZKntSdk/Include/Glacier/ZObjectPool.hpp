@@ -1,28 +1,7 @@
 #pragma once
 
-#include "ZPrimitives.hpp"
-
-class ZMutex {
-  public:
-    void Lock() {
-        EnterCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(this));
-    }
-
-    void Unlock() {
-        LeaveCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(this));
-    }
-
-    uint64_t m_impl[5];
-    uint32_t m_nUniqueID;
-};
-
-template<typename T> class ZInfiniteBuffer {
-  public:
-    T* m_pData;
-    uint32_t m_nSize;
-    uint32_t m_nActualSize;
-    uint32_t m_nMaxSize;
-};
+#include "ZInfiniteBuffer.hpp"
+#include "ZMutex.hpp"
 
 class ZObjectPool {
   public:
@@ -57,21 +36,6 @@ class ZObjectPool {
     }
 };
 
-static_assert(sizeof(ZObjectPool) == 112);
+static_assert(sizeof(ZObjectPool) == 104);
 static_assert(offsetof(ZObjectPool, m_pData) == 8);
 static_assert(offsetof(ZObjectPool, m_Buffer.m_nActualSize) == 52);
-
-template<class T> class TObjectPool {
-  public:
-    ZObjectPool m_Pool;
-    T* m_pStart;
-    T* m_pEnd;
-
-    [[nodiscard]] size_t IndexOf(T* p_Object) {
-        return (reinterpret_cast<uintptr_t>(p_Object) - reinterpret_cast<uintptr_t>(m_pStart)) / sizeof(T);
-    }
-
-    [[nodiscard]] bool BelongsToPool(T* p_Object) const {
-        return p_Object >= m_pStart && p_Object < m_pEnd;
-    }
-};

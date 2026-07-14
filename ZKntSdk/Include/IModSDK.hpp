@@ -15,6 +15,9 @@ class ZCppEntityFactory;
 struct ImGuiContext;
 
 class ZString;
+struct SVector2;
+struct SVector3;
+struct SMatrix;
 
 namespace zknt {
     class Hooks;
@@ -215,6 +218,35 @@ namespace zknt {
          * @param p_Plugin The plugin to reload the settings for.
          */
         virtual void ReloadPluginSettings(IPluginInterface* p_Plugin) = 0;
+
+        /**
+         * Convert a position in 3D world space to a 2D position on the screen.
+         * @param p_WorldPos The 3D world position.
+         * @param p_Out The output 2D position on the screen.
+         * @return True if the conversion was successful, false otherwise (eg. if the position is behind the camera).
+         */
+        virtual bool WorldToScreen(const SVector3& p_WorldPos, SVector2& p_Out) = 0;
+
+        /**
+         * Convert a 2D position on the screen to a 3D world position.
+         * @param p_ScreenPos The 2D position on the screen.
+         * @param p_WorldPosOut The output 3D world position.
+         * @param p_DirectionOut The output direction of the ray.
+         * @return True if the conversion was successful, false otherwise (eg. if the position is outside the screen bounds).
+         */
+        virtual bool ScreenToWorld(const SVector2& p_ScreenPos, SVector3& p_WorldPosOut, SVector3& p_DirectionOut) = 0;
+
+        /**
+         * Get the current camera view matrix.
+         * @return The camera view matrix used for the current frame.
+         */
+        virtual SMatrix GetViewMatrix() const = 0;
+
+        /**
+         * Get the current camera projection matrix.
+         * @return The camera projection matrix used for the current frame.
+         */
+        virtual SMatrix GetProjectionMatrix() const = 0;
     };
 }
 

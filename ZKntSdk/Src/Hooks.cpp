@@ -81,6 +81,16 @@ zknt::Hooks::Hooks() {
         "xxxxxxxxx?xxx????xxxxxxxxxxx????x????xxxxxxxx", ZKntLoadoutCollectionEntity_ZKntLoadoutCollectionEntity,
         ZKntLoadoutCollectionEntity * (ZKntLoadoutCollectionEntity * th, bool unk)
     );
+
+    PATTERN_HOOK(
+        "\x48\x8B\xC4\x48\x89\x70\x10\x57\x48\x81\xEC\x00\x00\x00\x00\x80\x3D", "xxxxxxxxxxx????xx", UpdateStreamlineConstants,
+        void(const SRenderCameraData& cameraData, uint32_t unk)
+    );
+
+    PATTERN_HOOK(
+        "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x41\x56\x41\x57\x48\x83\xEC\x00\x48\x8B\x01\x48\x8B\xF1",
+        "xxxxxxxxxxxxxxxxxxxxxxx?xxxxxx", SPassExecution_ExecutePass, void(SPassExecution * th, int32_t renderDeviceContextIndex)
+    );
 }
 
 void zknt::Hooks::EnableAll() {

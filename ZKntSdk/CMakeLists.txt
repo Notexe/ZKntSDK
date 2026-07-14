@@ -55,6 +55,7 @@ target_link_libraries(ZKntSdk PRIVATE
         d3dcompiler
         simdjson::simdjson
         ResourceLib_KNT
+        Microsoft::DirectXTK12
 )
 
 # Header-only interface exposed to mods.
