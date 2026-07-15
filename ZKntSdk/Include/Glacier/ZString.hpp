@@ -39,14 +39,9 @@ class ZString {
         Allocate(str, N - 1);
     }
 
-    ZString(const ZString& p_Other) {
-        if (p_Other.IsAllocated()) {
-            // TODO: Increase ref count instead.
-            Allocate(p_Other.c_str(), p_Other.size());
-        }
-        else {
-            m_nLength = p_Other.m_nLength;
-            m_pChars = p_Other.m_pChars;
+    ZString(const ZString& p_Other) : m_nLength(p_Other.m_nLength), m_pChars(p_Other.m_pChars) {
+        if (IsAllocated()) {
+            _InterlockedIncrement(&GetImpl()->m_nRefcount);
         }
     }
 
@@ -60,6 +55,10 @@ class ZString {
 
     ~ZString() {
         SDK()->FreeZString(this);
+    }
+
+    ZImpl* GetImpl() const {
+        return reinterpret_cast<ZImpl*>(const_cast<char*>(m_pChars)) - 1;
     }
 
     static ZString AllocateFromCStr(const char* p_Str, uint32_t p_Size) {
@@ -79,13 +78,13 @@ class ZString {
         }
 
         if (p_Other.IsAllocated()) {
-            // TODO: Increase ref count instead.
-            Allocate(p_Other.c_str(), p_Other.size());
+            _InterlockedIncrement(&p_Other.GetImpl()->m_nRefcount);
         }
-        else {
-            m_nLength = p_Other.m_nLength;
-            m_pChars = p_Other.m_pChars;
-        }
+
+        SDK()->FreeZString(this);
+
+        m_nLength = p_Other.m_nLength;
+        m_pChars = p_Other.m_pChars;
 
         return *this;
     }
