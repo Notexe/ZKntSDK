@@ -36,7 +36,7 @@ set(CMAKE_CXX_FLAGS_DEBUG_INIT "${_zknt_dwarf_flags}")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "${_zknt_dwarf_flags} -O2")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "${_zknt_dwarf_flags} -O2")
 
-foreach (d crt/include sdk/include/ucrt sdk/include/um sdk/include/shared)
+foreach (d crt/include sdk/include/ucrt sdk/include/um sdk/include/shared sdk/include/winrt)
   string(APPEND inc " /imsvc${xwin}/${d}")
 endforeach ()
 set(CMAKE_C_FLAGS_INIT "${inc} -Wno-unused-command-line-argument")
