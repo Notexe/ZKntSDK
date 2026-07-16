@@ -275,7 +275,17 @@ struct alignas(16) float4 {
     }
 
     inline static float DotProduct(const float4& v1, const float4& v2) {
+#if defined(__SSE4_1__) || (defined(_MSC_VER) && !defined(__clang__))
         return _mm_cvtss_f32(_mm_dp_ps(v1.m, v2.m, 0x71));
+#else
+        // SSE2 fallback for clang-cl cross builds (no SSE4.1 baseline): sum the
+        // x/y/z lane products into lane 0. Enabling /arch globally is avoided
+        // because it changes simdjson's SIMD implementation selection.
+        const __m128 m = _mm_mul_ps(v1.m, v2.m);
+        __m128 s = _mm_add_ss(m, _mm_shuffle_ps(m, m, _MM_SHUFFLE(1, 1, 1, 1)));
+        s = _mm_add_ss(s, _mm_shuffle_ps(m, m, _MM_SHUFFLE(2, 2, 2, 2)));
+        return _mm_cvtss_f32(s);
+#endif
     }
 
     inline static float4 Dot3(const float4& v1, const float4& v2) {
