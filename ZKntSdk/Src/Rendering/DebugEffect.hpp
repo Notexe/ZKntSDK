@@ -4,7 +4,6 @@
 #include <directxtk12/GraphicsMemory.h>
 
 #include <Glacier/ZMath.hpp>
-#include <Glacier/SColorRGBA.hpp>
 
 #include "D3DUtils.hpp"
 
